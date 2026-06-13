@@ -1,0 +1,2774 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="أسماك الخير">
+<meta name="theme-color" content="#12304A">
+<title>أسماك الخير v10.2</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<!-- FINAL BUILD v10.2 - finance transfers fixed - navy/gold theme -->
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --navy:#12304A;--teal:#12304A;--green:#059669;--red:#DC2626;--amber:#D97706;--purple:#7C3AED;
+  --gold:#D9A24A;--gold-dim:#FBF1E0;
+  --sky:#F3F6FA;--mint:#D1FAE5;--rose:#FEE2E2;--cream:#FEF3C7;
+  --bg:#F1F5F9;--card:#FFFFFF;--border:#E2E8F0;--muted:#64748B;--text:#1E293B;
+  --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--navy);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100%;height:100dvh;background:var(--bg);max-width:430px;margin:0 auto;overflow:hidden}
+.screen{display:none;flex:1;flex-direction:column;overflow:hidden}
+.screen.on{display:flex;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Topbar ── */
+.topbar{background:var(--navy);color:#fff;padding:calc(12px + var(--st)) 16px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:8px}
+.tb-left{display:flex;flex-direction:column;gap:1px}
+.tb-title{font-size:17px;font-weight:700;letter-spacing:-.3px}
+.tb-sub{font-size:11px;opacity:.6}
+.tb-actions{display:flex;gap:7px}
+.ic-btn{width:34px;height:34px;background:rgba(255,255,255,.12);border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;color:#fff;font-size:16px;flex-shrink:0;transition:background .15s}
+.ic-btn:active{background:rgba(255,255,255,.25)}
+
+/* ── Scroll ── */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px calc(70px + var(--sb))}
+
+/* ── Nav ── */
+.bnav{background:#fff;border-top:1px solid var(--border);display:flex;padding-bottom:var(--sb);flex-shrink:0;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;padding:8px 2px 5px;cursor:pointer;font-size:9px;font-weight:500;color:var(--muted);gap:2px;border:none;background:none;font-family:inherit;position:relative;transition:color .15s}
+.ni.on{color:var(--navy)}
+.ni.on::after{content:'';position:absolute;bottom:calc(0px + var(--sb));left:50%;transform:translateX(-50%);width:20px;height:2.5px;background:var(--navy);border-radius:2px}
+.ni i{font-size:21px}
+
+/* ── Cards ── */
+.card{background:var(--card);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:var(--shadow);border:1px solid var(--border)}
+.card-title{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+
+/* ── KPI Grid ── */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.kpi{border-radius:13px;padding:11px 10px;color:#fff;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;bottom:-14px;left:-8px;width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.07)}
+.kv{font-size:20px;font-weight:800;line-height:1;margin-bottom:3px}
+.kl{font-size:9px;opacity:.8;font-weight:500;line-height:1.3}
+.kpi-b{background:linear-gradient(135deg,#12304A,#1558A8)}
+.kpi-t{background:linear-gradient(135deg,#0E7490,#0EA5C4)}
+.kpi-g{background:linear-gradient(135deg,#059669,#10B981)}
+.kpi-r{background:linear-gradient(135deg,#DC2626,#F87171)}
+.kpi-a{background:linear-gradient(135deg,#D97706,#F59E0B)}
+.kpi-p{background:linear-gradient(135deg,#7C3AED,#A78BFA)}
+
+/* ── Alerts ── */
+.alert{padding:10px 12px;border-radius:11px;font-size:12px;display:flex;gap:8px;align-items:flex-start;margin-bottom:9px;border-width:1px;border-style:solid;line-height:1.5}
+.al-w{background:#FFFBEB;border-color:#FDE68A;color:#92400E}
+.al-r{background:#FFF5F5;border-color:#FECACA;color:#991B1B}
+.al-b{background:var(--sky);border-color:#BFDBFE;color:#1E40AF}
+.al-g{background:#F0FDF4;border-color:#BBF7D0;color:#166534}
+
+/* ── Forms ── */
+.fg{margin-bottom:12px}
+.fl{font-size:12px;font-weight:600;color:#374151;margin-bottom:5px;display:block}
+.fi{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-size:16px;font-family:inherit;direction:rtl;background:#fff;color:var(--text);outline:none;-webkit-appearance:none;transition:border-color .15s,box-shadow .15s}
+.fi:focus{border-color:var(--navy);box-shadow:0 0 0 3px rgba(11,61,107,.08)}
+select.fi{cursor:pointer}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ta{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-size:14px;font-family:inherit;direction:rtl;resize:none;background:#fff;color:var(--text);outline:none;-webkit-appearance:none;min-height:80px;transition:border-color .15s}
+.ta:focus{border-color:var(--teal)}
+.ta.ok{border-color:#10B981;background:#F0FDF4}
+
+/* ── Buttons ── */
+.btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;transition:transform .1s,box-shadow .1s;-webkit-appearance:none}
+.btn:active{transform:scale(.97)}
+.btn-primary{background:var(--navy);color:#fff;box-shadow:0 2px 6px rgba(18,48,74,.30)}
+.btn-green{background:var(--green);color:#fff;box-shadow:0 2px 6px rgba(5,150,105,.3)}
+.btn-red{background:#FFF5F5;color:var(--red);border:1.5px solid #FECACA}
+.btn-ghost{background:var(--sky);color:var(--navy);border:1.5px solid #BFDBFE}
+.btn-sm{padding:8px 14px;width:auto;font-size:12px;border-radius:9px}
+
+/* ── Tabs ── */
+.tabs{display:flex;background:#F1F5F9;border-radius:11px;padding:3px;gap:3px;margin-bottom:14px}
+.tab{flex:1;padding:8px;border-radius:9px;text-align:center;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;border:none;background:none;color:var(--muted);transition:all .15s}
+.tab.on{background:#fff;color:var(--navy);box-shadow:var(--shadow)}
+
+/* ── Daily tabs ── */
+.ptabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:none}
+.ptabs::-webkit-scrollbar{display:none}
+.ptab{flex-shrink:0;padding:7px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;font-weight:500;cursor:pointer;background:#fff;font-family:inherit;transition:all .15s}
+.ptab.on{border-color:var(--navy);background:var(--navy);color:#fff}
+.ptab.done{border-color:#10B981;background:#F0FDF4;color:#065F46}
+
+/* ── Water options ── */
+.wopts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.wopt{padding:9px;border-radius:10px;border:1.5px solid var(--border);font-size:12px;font-weight:500;cursor:pointer;text-align:center;background:#fff;transition:all .15s;font-family:inherit}
+.wopt.on{border-color:var(--navy);background:var(--sky);color:var(--navy);font-weight:700}
+
+/* ── Report boxes ── */
+.rbox{border-radius:12px;padding:12px;margin-bottom:10px;border:1.5px solid var(--border);background:var(--card)}
+.rbox.ok{border-color:#10B981;background:#F0FDF4}
+.rb-hdr{font-size:12px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between}
+
+/* ── Daily status bar ── */
+.dstatus{display:flex;gap:7px;margin-bottom:14px}
+.ds-item{flex:1;padding:8px 6px;border-radius:10px;text-align:center;font-size:10px;font-weight:600;transition:all .2s}
+.ds-done{background:#D1FAE5;color:#065F46}
+.ds-todo{background:#F1F5F9;color:#94A3B8}
+
+/* ── Transactions ── */
+.trow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--border)}
+.trow:last-child{border-bottom:none}
+.ticon{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+.t-name{font-size:13px;font-weight:600;line-height:1.3}
+.t-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.t-amt{font-size:15px;font-weight:700;white-space:nowrap}
+.empty{text-align:center;padding:28px 16px;color:var(--muted);font-size:13px}
+.empty i{font-size:36px;display:block;margin-bottom:8px;opacity:.25}
+
+/* ── Staff ── */
+.emp-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:9px;cursor:pointer;transition:border-color .15s,box-shadow .15s;display:flex;align-items:center;gap:12px;box-shadow:var(--shadow)}
+.emp-card:active{box-shadow:var(--shadow-md);border-color:var(--navy)}
+.emp-av{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;background:var(--sky)}
+.att-btns{display:flex;gap:5px;flex-wrap:wrap}
+.att-b{padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);font-size:11px;font-weight:600;cursor:pointer;background:#fff;font-family:inherit;transition:all .15s}
+.att-b.sp{background:#D1FAE5;border-color:#10B981;color:#065F46}
+.att-b.sa{background:#FEE2E2;border-color:#EF4444;color:#991B1B}
+.att-b.sl{background:#FFFBEB;border-color:#F59E0B;color:#92400E}
+
+/* ── Progress ── */
+.prg{height:6px;background:#F1F5F9;border-radius:3px;overflow:hidden;margin-top:7px}
+.prg-fill{height:100%;border-radius:3px;transition:width .5s ease}
+.prg-meta{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── Photo ── */
+.photo-btn{border:1.5px dashed #93C5FD;border-radius:10px;padding:10px;background:var(--sky);cursor:pointer;text-align:center;font-size:12px;font-weight:600;color:var(--teal);display:flex;align-items:center;justify-content:center;gap:6px}
+
+/* ── Modal ── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:50;display:flex;flex-direction:column;justify-content:flex-end;max-width:430px;margin:0 auto;backdrop-filter:blur(2px)}
+.modal{background:#fff;border-radius:22px 22px 0 0;padding:20px 16px calc(24px + var(--sb));max-height:93vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.mh{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.mt{font-size:18px;font-weight:700;color:var(--text)}
+.mcl{width:30px;height:30px;background:#F1F5F9;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;font-size:15px;color:var(--muted)}
+
+/* ── Export screen ── */
+.exp-card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;border:1.5px solid var(--border);box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+.exp-card:active{box-shadow:var(--shadow-md)}
+.exp-icon{width:48px;height:48px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:22px}
+.exp-title{font-size:14px;font-weight:700;color:var(--text)}
+.exp-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* ── Misc ── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.b-g{background:#D1FAE5;color:#065F46}
+.b-r{background:#FEE2E2;color:#991B1B}
+.b-a{background:#FEF3C7;color:#92400E}
+.b-b{background:var(--sky);color:#1E40AF}
+.divider{height:1px;background:var(--border);margin:12px 0}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+.spin{animation:spin .8s linear infinite;display:inline-block}
+.btn-range{padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);font-size:11px;font-weight:600;cursor:pointer;background:#fff;font-family:inherit;color:var(--navy);transition:all .15s}
+.btn-range:active,.btn-range.on{background:var(--navy);color:#fff;border-color:var(--navy)}
+.ops-block{background:linear-gradient(135deg,#EFF6FF,#E0F2FE);border:1.5px solid #BFDBFE;border-radius:13px;padding:13px;margin-bottom:10px}
+.ops-t{font-size:13px;font-weight:700;color:var(--navy);margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.diesel-bar{height:10px;background:#F1F5F9;border-radius:5px;overflow:hidden;margin-top:8px}
+
+/* ── Finance tabs ── */
+.fin-summary{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+#s-login.on ~ .bnav,#s-gm.on ~ .bnav,#s-emp-manage.on ~ .bnav,#s-cat-manage.on ~ .bnav{display:none}
+.gm-stat{background:#fff;border-radius:12px;padding:12px;text-align:center;box-shadow:var(--shadow);border:1px solid var(--border)}
+.gm-stat .v{font-size:18px;font-weight:800}.gm-stat .l{font-size:10px;color:var(--muted);margin-top:3px}
+.fin-box{border-radius:12px;padding:10px;text-align:center}
+.fin-v{font-size:16px;font-weight:800;line-height:1;margin-bottom:3px}
+.fin-l{font-size:9px;font-weight:500}
+
+
+/* ══ Trial UX refresh — lightweight teal/gold theme ═════════════ */
+:root{
+  --navy:#12304A;--teal:#12304A;--green:#059669;--red:#D64545;--amber:#D9A24A;
+  --sky:#EAF8F6;--bg:#F6F8FA;--card:#FFFFFF;--border:#E6EDF2;--muted:#6B7A86;--text:#18313A;
+  --shadow:0 8px 24px rgba(14,58,64,.06),0 1px 2px rgba(14,58,64,.06);
+  --shadow-md:0 12px 30px rgba(14,58,64,.10),0 2px 6px rgba(14,58,64,.08);
+}
+#app{background:linear-gradient(180deg,#F7FBFC 0%,#F1F5F7 100%)}
+.topbar{background:#fff;color:var(--navy);border-bottom:1px solid var(--border);box-shadow:0 1px 0 rgba(18,48,74,.03)}
+.ic-btn{background:#F3F6FA;color:var(--navy);border:1px solid #E1E8F0}.ic-btn:active{background:#E8EEF5}
+#s-home .topbar + div,#s-gm .topbar + div{background:linear-gradient(135deg,#12304A 0%,#12304A 100%)!important;border-radius:0 0 26px 26px;box-shadow:0 14px 28px rgba(18,48,74,.18)}
+.card{border:1px solid rgba(226,232,240,.9);box-shadow:var(--shadow);border-radius:18px}
+.card-title{font-size:14px;color:var(--navy)}
+.kpi,.fin-box,.gm-stat{box-shadow:0 6px 18px rgba(14,58,64,.07)}
+.kpi-b{background:linear-gradient(135deg,#12304A,#1D4E76)}.kpi-t{background:linear-gradient(135deg,#12304A,#D4A437)}.kpi-g{background:linear-gradient(135deg,#059669,#20C997)}.kpi-r{background:linear-gradient(135deg,#D64545,#F87171)}.kpi-a{background:linear-gradient(135deg,#D9A24A,#F4C66A)}.kpi-p{background:linear-gradient(135deg,#7C3AED,#A78BFA)}
+.btn-primary{background:linear-gradient(135deg,#12304A,#12304A);box-shadow:0 8px 18px rgba(18,48,74,.22)}
+.btn-green{background:linear-gradient(135deg,#059669,#12304A)}
+.bnav{border-top:1px solid var(--border);box-shadow:0 -8px 24px rgba(14,58,64,.06)}
+.ni.on{color:var(--teal)}.ni.on::after{background:var(--teal)}
+.alert{border-radius:14px}.exp-card{border-radius:16px}.modal{border-radius:26px 26px 0 0}
+.fi,.ta{border-radius:13px}.tabs{border-radius:14px;background:#EEF4F5}.tab{border-radius:11px}.tab.on{color:var(--teal)}
+.ticon{border-radius:13px}
+/* شاشة التشغيل كوجهة رئيسية */
+#s-ops-hist .topbar .tb-title::after{content:' اليوم';font-weight:500;color:var(--muted);font-size:12px;margin-right:4px}
+
+
+/* ══ FINAL THEME: كحلي + ذهبي — بدون زيتي/أخضر كخلفية أساسية ══ */
+:root{
+  --navy:#12304A;
+  --teal:#12304A;
+  --gold:#D4A437;
+  --gold-dim:#FFF6E3;
+  --green:#059669;
+  --red:#DC2626;
+  --amber:#D4A437;
+  --sky:#EEF4FA;
+  --bg:#F6F8FA;
+  --card:#FFFFFF;
+  --border:#E5EAF0;
+  --muted:#6B7A86;
+  --text:#1E293B;
+}
+html,body{background:#12304A!important;}
+#app{background:linear-gradient(180deg,#F8FAFC 0%,#F1F5F9 100%)!important;}
+.topbar{background:#FFFFFF!important;color:#12304A!important;border-bottom:1px solid var(--border);}
+#s-login>div{background:linear-gradient(160deg,#12304A 0%,#0B1F33 100%)!important;}
+#s-home .topbar + div,#s-gm .topbar + div{background:linear-gradient(135deg,#12304A 0%,#0B1F33 100%)!important;box-shadow:0 14px 28px rgba(18,48,74,.18)!important;}
+.ic-btn{background:#F3F6FA!important;color:#12304A!important;border:1px solid #E1E8F0!important;}
+.btn-primary{background:linear-gradient(135deg,#12304A,#0B1F33)!important;box-shadow:0 8px 18px rgba(18,48,74,.22)!important;}
+.btn-green{background:linear-gradient(135deg,#059669,#0F8A5F)!important;}
+.ni.on{color:#12304A!important}.ni.on::after{background:#D4A437!important;}
+.card-title,.tb-title{color:#12304A}
+.kpi-b{background:linear-gradient(135deg,#12304A,#1D4E76)!important}
+.kpi-t{background:linear-gradient(135deg,#D4A437,#F0C96A)!important}
+.kpi-a{background:linear-gradient(135deg,#D4A437,#F0C96A)!important}
+.kpi-g{background:linear-gradient(135deg,#059669,#10B981)!important}
+.kpi-r{background:linear-gradient(135deg,#DC2626,#EF4444)!important}
+.kpi-p{background:linear-gradient(135deg,#6D5BD0,#8B7CF6)!important}
+.tab.on{color:#12304A!important;border-bottom-color:#D4A437!important}
+
+
+/* === Final navy + gold theme hard override v10.2 === */
+:root{
+  --navy:#12304A!important;
+  --teal:#1D4E76!important;
+  --gold:#D4A437!important;
+  --amber:#D4A437!important;
+  --sky:#F3F6FA!important;
+  --bg:#F6F8FA!important;
+}
+html,body{background:#12304A!important;}
+#app{background:#F6F8FA!important;}
+.topbar{background:#FFFFFF!important;color:#12304A!important;border-bottom:1px solid var(--border)!important;}
+#s-login>div{background:linear-gradient(160deg,#12304A 0%,#0B1F33 100%)!important;}
+#s-home .topbar + div,#s-gm .topbar + div{background:linear-gradient(135deg,#12304A 0%,#0B1F33 100%)!important;box-shadow:0 14px 28px rgba(18,48,74,.18)!important;}
+.ic-btn{background:#F3F6FA!important;color:#12304A!important;border:1px solid #E1E8F0!important;}
+.btn-primary{background:linear-gradient(135deg,#12304A,#0B1F33)!important;box-shadow:0 8px 18px rgba(18,48,74,.22)!important;}
+.ni.on{color:#12304A!important}.ni.on::after{background:#D4A437!important;}
+.card-title,.tb-title{color:#12304A!important;}
+.kpi-b{background:linear-gradient(135deg,#12304A,#1D4E76)!important;}
+.kpi-t{background:linear-gradient(135deg,#1D4E76,#D4A437)!important;}
+.kpi-a{background:linear-gradient(135deg,#D4A437,#F1C96B)!important;}
+.tab.on{color:#12304A!important;border-bottom-color:#D4A437!important;}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ تسجيل الدخول ════════════════════════════════════════════ -->
+<div id="s-login" class="screen on" style="justify-content:center">
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:24px;background:linear-gradient(160deg,var(--navy),var(--teal))">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="font-size:52px;margin-bottom:8px">🐟</div>
+      <div style="font-size:24px;font-weight:800;color:#fff;letter-spacing:-.5px">أسماك الخير</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.65);margin-top:4px">شركة الحقول المتعددة الزراعية</div>
+    </div>
+    <div style="background:#fff;border-radius:18px;padding:22px;width:100%;max-width:340px;box-shadow:0 8px 30px rgba(0,0,0,.25)">
+      <div style="font-size:15px;font-weight:700;color:var(--navy);margin-bottom:16px;text-align:center">تسجيل الدخول</div>
+      <div class="fg">
+        <label class="fl">البريد الإلكتروني</label>
+        <input class="fi" id="login-email" type="email" placeholder="example@inbox.com.sa" style="direction:ltr;text-align:left" autocomplete="username">
+      </div>
+      <div class="fg" style="margin-bottom:8px">
+        <label class="fl">كلمة المرور</label>
+        <input class="fi" id="login-pass" type="password" placeholder="••••••••" style="direction:ltr;text-align:left" autocomplete="current-password">
+      </div>
+      <div id="login-err" style="font-size:12px;color:var(--red);min-height:18px;margin-bottom:8px;text-align:center"></div>
+      <button class="btn btn-primary" id="login-btn" onclick="doLogin()"><i class="ti ti-login-2"></i> دخول</button>
+    </div>
+    <div style="margin-top:20px;font-size:11px;color:rgba(255,255,255,.5)">أسماك الخير v7.0</div>
+  </div>
+</div>
+
+<!-- ══ الرئيسية ══════════════════════════════════════════════ -->
+<div id="s-home" class="screen">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-title">🐟 أسماك الخير</div>
+      <div class="tb-sub" id="h-date">—</div>
+    </div>
+    <div class="tb-actions">
+      <button class="ic-btn" onclick="go('s-daily');initDaily()" aria-label="عرض الأرشيف والأيام السابقة"><i class="ti ti-calendar"></i></button>
+      <button class="ic-btn" onclick="go('s-export')"><i class="ti ti-download"></i></button>
+      <button class="ic-btn" onclick="go('s-settings')"><i class="ti ti-settings"></i></button>
+    </div>
+  </div>
+  <!-- KPI header strip -->
+  <div style="background:linear-gradient(160deg,var(--navy),var(--teal));padding:14px 16px 18px;flex-shrink:0">
+    <div class="kpi-grid" id="h-kpis"></div>
+  </div>
+  <div class="scroll">
+    <div id="h-alerts"></div>
+    <!-- Financial summary -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar" style="font-size:15px"></i> الملخص المالي</div>
+      <div id="h-fin"></div>
+    </div>
+    <!-- Pond grid -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin:0"><i class="ti ti-fish" style="font-size:15px"></i> الأحواض</div>
+        <button onclick="go('s-daily');initDaily()" style="padding:5px 13px;background:var(--navy);color:#fff;border:none;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px"><i class="ti ti-plus" style="font-size:12px"></i> تسجيل</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="h-ponds"></div>
+    </div>
+    <!-- Quick actions -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <button onclick="openM('m-expense','expense')" style="padding:16px 10px;background:#fff;border:1.5px solid #FECACA;border-radius:14px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:var(--shadow)">
+        <i class="ti ti-minus-circle" style="font-size:28px;color:var(--red);display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:700;color:var(--red)">مصروف</div>
+      </button>
+      <button onclick="openM('m-sale')" style="padding:16px 10px;background:#fff;border:1.5px solid #BBF7D0;border-radius:14px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:var(--shadow)">
+        <i class="ti ti-fish" style="font-size:28px;color:var(--green);display:block;margin-bottom:6px"></i>
+        <div style="font-size:13px;font-weight:700;color:var(--green)">بيع أسماك</div>
+      </button>
+    </div>
+    <!-- Recent -->
+    <div class="card">
+      <div class="card-title"><i class="ti ti-activity" style="font-size:15px"></i> آخر الأحداث</div>
+      <div id="h-recent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ اليومي ════════════════════════════════════════════════ -->
+<div id="s-daily" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">اليومي</div><div class="tb-sub" id="d-sub">—</div></div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <input type="date" id="d-date" onchange="changeDailyDate()" style="border:1.5px solid var(--border);border-radius:9px;padding:6px 8px;font-size:12px;font-family:inherit;color:var(--navy);background:#fff">
+      <button class="ic-btn" onclick="go('s-home')"><i class="ti ti-arrow-right"></i></button>
+    </div>
+  </div>
+  <div id="d-past-banner" style="display:none;background:#FFFBEB;border-bottom:1.5px solid #FDE68A;padding:8px 16px;font-size:12px;color:#92400E;text-align:center;flex-shrink:0">
+    <i class="ti ti-calendar-time" style="font-size:14px"></i> تعرض/تعدّل بيانات يوم سابق — <span onclick="goToday()" style="text-decoration:underline;cursor:pointer;font-weight:700">رجوع لليوم</span>
+  </div>
+  <div class="scroll">
+    <div class="tabs">
+      <button class="tab on" id="dt-1" onclick="switchDaily('ponds')">🐟 الأحواض</button>
+      <button class="tab" id="dt-2" onclick="switchDaily('ops')">⚙️ التشغيل</button>
+      <button class="tab" id="dt-3" onclick="switchDaily('reports')">✍️ التقارير</button>
+    </div>
+    <div class="dstatus" id="d-status"></div>
+
+    <!-- Ponds -->
+    <div id="dp-ponds">
+      <div class="ptabs" id="pond-tabs"></div>
+      <div id="pond-form"></div>
+      <button class="btn btn-primary" onclick="savePonds()" style="margin-top:12px"><i class="ti ti-device-floppy"></i> حفظ بيانات الأحواض</button>
+    </div>
+
+    <!-- Operations -->
+    <div id="dp-ops" style="display:none">
+      <div class="ops-block">
+        <div class="ops-t"><i class="ti ti-engine"></i> المولد الرئيسي</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">ساعات التشغيل</label><input class="fi" id="og" type="number" step="0.5" inputmode="decimal" placeholder="0.0"></div>
+          <div class="fg"><label class="fl">ديزل مستهلك (ل)</label><input class="fi" id="ogd" type="number" inputmode="decimal" placeholder="0"></div>
+        </div>
+      </div>
+      <div class="ops-block">
+        <div class="ops-t"><i class="ti ti-droplet"></i> الرشاش المحوري 1</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">ساعات</label><input class="fi" id="s1h" type="number" step="0.5" inputmode="decimal" placeholder="0.0"></div>
+          <div class="fg"><label class="fl">سرعة %</label><input class="fi" id="s1p" type="number" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="fg" style="margin-bottom:0"><label class="fl">ديزل (ل)</label><input class="fi" id="s1d" type="number" inputmode="decimal" placeholder="0"></div>
+      </div>
+      <div class="ops-block">
+        <div class="ops-t"><i class="ti ti-droplet"></i> الرشاش المحوري 2</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">ساعات</label><input class="fi" id="s2h" type="number" step="0.5" inputmode="decimal" placeholder="0.0"></div>
+          <div class="fg"><label class="fl">سرعة %</label><input class="fi" id="s2p" type="number" inputmode="numeric" placeholder="0"></div>
+        </div>
+        <div class="fg" style="margin-bottom:0"><label class="fl">ديزل (ل)</label><input class="fi" id="s2d" type="number" inputmode="decimal" placeholder="0"></div>
+      </div>
+      <div class="fg"><label class="fl">أعطال / صيانة</label><textarea class="ta" id="ofault" placeholder="اترك فارغاً إن لا يوجد..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveOpsDaily()"><i class="ti ti-device-floppy"></i> حفظ بيانات التشغيل</button>
+    </div>
+
+    <!-- Reports -->
+    <div id="dp-reports" style="display:none">
+      <div class="alert al-b" style="margin-bottom:12px"><i class="ti ti-info-circle" style="flex-shrink:0;margin-top:1px"></i><span>تقرير الأسماك إلزامي — الباقي اختياري</span></div>
+      <div class="rbox" id="rb-fish">
+        <div class="rb-hdr"><span><i class="ti ti-fish"></i> تقرير الأسماك</span><span style="font-size:10px;color:var(--red)">إلزامي ✱</span></div>
+        <textarea class="ta" id="r-fish" placeholder="حالة الأسماك، النمو، ملاحظات اليوم..." oninput="chkRep(this,'rb-fish')"></textarea>
+      </div>
+      <div class="rbox" id="rb-irr">
+        <div class="rb-hdr"><span><i class="ti ti-droplet"></i> تقرير الرشاشات</span><span style="font-size:10px;color:var(--muted)">اختياري</span></div>
+        <textarea class="ta" id="r-irr" placeholder="حالة الرشاشات..." oninput="chkRep(this,'rb-irr')"></textarea>
+      </div>
+      <div class="rbox" id="rb-farm">
+        <div class="rb-hdr"><span><i class="ti ti-home-2"></i> تقرير المزرعة</span><span style="font-size:10px;color:var(--muted)">اختياري</span></div>
+        <textarea class="ta" id="r-farm" placeholder="أحداث، زيارات..." oninput="chkRep(this,'rb-farm')"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveReports()"><i class="ti ti-device-floppy"></i> حفظ التقارير</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ المالية ════════════════════════════════════════════════ -->
+<div id="s-finance" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">المالية</div><div class="tb-sub" id="fin-sub">—</div></div>
+    <button class="ic-btn" onclick="openM('m-expense')"><i class="ti ti-plus"></i></button>
+  </div>
+  <div class="scroll">
+    <!-- Summary -->
+    <div class="card" style="padding:13px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-size:12px;color:var(--muted);font-weight:600">الرصيد المتاح</span>
+        <span style="font-size:24px;font-weight:800" id="fin-bal">0 ر.س</span>
+      </div>
+      <div class="fin-summary" id="fin-boxes"></div>
+    </div>
+    <div class="tabs">
+      <button class="tab on" id="ft-1" onclick="finTab('cash')">العهدة</button>
+      <button class="tab" id="ft-2" onclick="finTab('sales')">المبيعات</button>
+    </div>
+    <div id="fin-cash">
+      <div class="fr" style="margin-bottom:12px">
+        <button onclick="openM('m-expense','expense')" class="btn btn-red btn-sm" style="width:100%;padding:11px"><i class="ti ti-minus-circle"></i> مصروف</button>
+        <button onclick="openM('m-expense','income')" style="width:100%;padding:11px;background:#F0FDF4;color:var(--green);border:1.5px solid #BBF7D0;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-plus-circle"></i> إيراد</button>
+      </div>
+      <div class="card"><div class="card-title"><i class="ti ti-list" style="font-size:14px"></i> السجل</div><div id="cash-list"></div></div>
+    </div>
+    <div id="fin-sales" style="display:none">
+      <div class="kpi-grid" style="margin-bottom:12px" id="sal-kpis"></div>
+      <button class="btn btn-green" onclick="openM('m-sale')" style="margin-bottom:12px"><i class="ti ti-plus"></i> تسجيل بيع</button>
+      <div class="card"><div class="card-title"><i class="ti ti-receipt" style="font-size:14px"></i> المبيعات</div><div id="sales-list"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ الموظفون ════════════════════════════════════════════════ -->
+<div id="s-staff" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">الموظفون</div><div class="tb-sub" id="staff-sub">—</div></div>
+    <button class="ic-btn" onclick="openM('m-payment')"><i class="ti ti-plus"></i></button>
+  </div>
+  <div class="scroll">
+    <div class="kpi-grid" id="staff-kpis"></div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-calendar-check" style="font-size:14px"></i> الحضور اليوم</div>
+      <div id="att-today"></div>
+    </div>
+    <div id="emp-cards"></div>
+  </div>
+</div>
+
+<!-- ══ لوحة المدير العام ══════════════════════════════════════ -->
+<div id="s-gm" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">لوحة المدير العام</div><div class="tb-sub" id="gm-date">—</div></div>
+    <button class="ic-btn" onclick="doLogout()"><i class="ti ti-logout"></i></button>
+  </div>
+  <div style="background:linear-gradient(160deg,var(--navy),var(--teal));padding:14px 16px 18px;flex-shrink:0">
+    <div class="kpi-grid" id="gm-kpis"></div>
+  </div>
+  <div class="tabs" style="margin:12px 14px 0">
+    <button class="tab on" id="gmt-1" onclick="switchGmTab('fishfarm')">🐟 أسماك الخير</button>
+    <button class="tab" id="gmt-2" onclick="switchGmTab('overview')">🏢 نظرة عامة</button>
+    <button class="tab" id="gmt-3" onclick="switchGmTab('finance')">💰 المالية الجماعية</button>
+  </div>
+  <div class="tabs" style="margin:8px 14px 0">
+    <button class="tab" id="gmt-4" onclick="switchGmTab('marketing')">📣 التسويق</button>
+    <button class="tab" id="gmt-5" onclick="switchGmTab('system')">⚙️ النظام والمنصة</button>
+  </div>
+  <div class="scroll">
+    <div id="gmp-fishfarm">
+    <div id="gm-alerts"></div>
+
+    <div class="card" style="border:1.5px solid var(--navy)">
+      <div class="card-title"><i class="ti ti-report-money" style="font-size:15px"></i> الملخص الشامل (المزرعة + بنود المدير العام)</div>
+      <div id="gm-overall"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="card-title" style="margin:0"><i class="ti ti-list-details" style="font-size:15px"></i> بنود إضافية (المدير العام)</div>
+        <button onclick="openM('m-gm-entry')" style="background:var(--navy);color:#fff;border:none;width:30px;height:30px;border-radius:9px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center"><i class="ti ti-plus"></i></button>
+      </div>
+      <div id="gm-entries-list"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar" style="font-size:15px"></i> بيانات المزرعة — منذ البداية</div>
+      <div id="gm-fin"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-calendar-stats" style="font-size:15px"></i> الشهر الحالي — <span id="gm-month-lbl"></span></div>
+      <div id="gm-month"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-fish" style="font-size:15px"></i> حالة الأحواض اليوم</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px" id="gm-ponds"></div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="card-title" style="margin:0"><i class="ti ti-history" style="font-size:15px"></i> سجل الأحداث التفصيلي</div>
+        <span style="font-size:10px;color:var(--muted)">آخر تحديث: <span id="gm-last-update">—</span></span>
+      </div>
+      <div id="gm-activity-log"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-download" style="font-size:15px"></i> التصدير</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <button class="btn btn-primary" onclick="setDateRange('month');exportExcelRange()" style="padding:11px;font-size:12px"><i class="ti ti-file-spreadsheet" style="font-size:14px"></i> Excel الشهر</button>
+        <button class="btn btn-ghost" onclick="setDateRange('all');exportExcelRange()" style="padding:11px;font-size:12px"><i class="ti ti-database" style="font-size:14px"></i> Excel الكل</button>
+      </div>
+      <button class="btn btn-ghost" onclick="exportPDF('monthly')" style="font-size:12px"><i class="ti ti-file-text" style="font-size:14px"></i> تقرير PDF شهري</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-adjustments" style="color:var(--teal)"></i> الإدارة والتخصيص</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">إضافة/تعديل الموظفين والتصنيفات — بدون الحاجة لتطوير</div>
+      <button onclick="go('s-emp-manage');renderEmpManage()" style="width:100%;padding:12px;border-radius:11px;border:1.5px solid var(--border);background:#fff;color:var(--navy);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="display:flex;align-items:center;gap:8px"><i class="ti ti-users-group" style="font-size:16px"></i> إدارة الموظفين والرواتب</span><i class="ti ti-chevron-left" style="font-size:15px;color:var(--muted)"></i></button>
+      <button onclick="go('s-cat-manage');renderCatManage()" style="width:100%;padding:12px;border-radius:11px;border:1.5px solid var(--border);background:#fff;color:var(--navy);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:space-between"><span style="display:flex;align-items:center;gap:8px"><i class="ti ti-tags" style="font-size:16px"></i> إدارة تصنيفات المصروفات والإيرادات</span><i class="ti ti-chevron-left" style="font-size:15px;color:var(--muted)"></i></button>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-alert-triangle" style="color:var(--red)"></i> منطقة الخطر</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div><div style="font-size:13px;font-weight:600" id="gm-st-cnt">—</div><div style="font-size:11px;color:var(--muted)">محفوظ محلياً + Firebase — لكل الأجهزة</div></div>
+      </div>
+      <button onclick="clearAll()" style="width:100%;padding:11px;border-radius:11px;border:1.5px solid #FECACA;background:#FFF5F5;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><i class="ti ti-trash" style="font-size:15px"></i> مسح جميع البيانات (من كل الأجهزة)</button>
+    </div>
+    </div>
+
+    <div id="gmp-overview" style="display:none"></div>
+    <div id="gmp-finance" style="display:none"></div>
+    <div id="gmp-marketing" style="display:none"></div>
+    <div id="gmp-system" style="display:none"></div>
+  </div>
+</div>
+
+<!-- ══ المزيد ════════════════════════════════════════════════ -->
+<div id="s-more" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">المزيد</div></div>
+  </div>
+  <div class="scroll">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+      <button onclick="go('s-staff');renderStaff()" style="padding:18px 10px;background:#fff;border:1.5px solid #D1FAE5;border-radius:14px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:var(--shadow)">
+        <i class="ti ti-users" style="font-size:28px;color:var(--teal);display:block;margin-bottom:6px"></i>
+        <div style="font-size:12px;font-weight:700;color:var(--teal)">الموظفون</div>
+      </button>
+      <button onclick="go('s-feed');renderFeed()" style="padding:18px 10px;background:#fff;border:1.5px solid #DDD6FE;border-radius:14px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:var(--shadow)">
+        <i class="ti ti-package" style="font-size:28px;color:var(--purple);display:block;margin-bottom:6px"></i>
+        <div style="font-size:12px;font-weight:700;color:var(--purple)">مخزون العلف</div>
+      </button>
+      <button onclick="go('s-export')" style="padding:18px 10px;background:#fff;border:1.5px solid #BBF7D0;border-radius:14px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:var(--shadow)">
+        <i class="ti ti-download" style="font-size:28px;color:var(--green);display:block;margin-bottom:6px"></i>
+        <div style="font-size:12px;font-weight:700;color:var(--green)">تصدير البيانات</div>
+      </button>
+      <button onclick="go('s-settings')" style="padding:18px 10px;background:#fff;border:1.5px solid var(--border);border-radius:14px;cursor:pointer;font-family:inherit;text-align:center;box-shadow:var(--shadow)">
+        <i class="ti ti-settings" style="font-size:28px;color:var(--muted);display:block;margin-bottom:6px"></i>
+        <div style="font-size:12px;font-weight:700;color:var(--muted)">الإعدادات</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ التصدير ════════════════════════════════════════════════ -->
+<div id="s-export" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">تصدير البيانات</div><div class="tb-sub">Excel + PDF</div></div>
+    <button class="ic-btn" onclick="go(currentRole==='gm'?'s-gm':'s-home')"><i class="ti ti-arrow-right"></i></button>
+  </div>
+  <div class="scroll">
+
+    <!-- Date Range Picker -->
+    <div class="card" style="padding:13px;margin-bottom:14px">
+      <div class="card-title" style="margin-bottom:10px"><i class="ti ti-calendar-range" style="font-size:14px"></i> نطاق التاريخ</div>
+      <div class="fr" style="margin-bottom:10px">
+        <div class="fg" style="margin-bottom:0"><label class="fl">من تاريخ</label><input class="fi" id="exp-from" type="date"></div>
+        <div class="fg" style="margin-bottom:0"><label class="fl">إلى تاريخ</label><input class="fi" id="exp-to" type="date"></div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="setDateRange('today')" class="btn-range">اليوم</button>
+        <button onclick="setDateRange('week')" class="btn-range">هذا الأسبوع</button>
+        <button onclick="setDateRange('month')" class="btn-range">هذا الشهر</button>
+        <button onclick="setDateRange('last30')" class="btn-range">آخر 30 يوم</button>
+        <button onclick="setDateRange('all')" class="btn-range">الكل</button>
+      </div>
+    </div>
+
+    <!-- Excel -->
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+      <i class="ti ti-table" style="font-size:15px;color:#059669"></i> تصدير Excel
+    </div>
+
+    <div class="exp-card" onclick="exportExcelRange()" style="border-color:#BBF7D0">
+      <div class="exp-icon" style="background:#D1FAE5"><i class="ti ti-table" style="color:var(--green);font-size:24px"></i></div>
+      <div style="flex:1">
+        <div class="exp-title" style="color:var(--green)">تصدير Excel</div>
+        <div class="exp-sub" id="exp-range-lbl">حدّد الفترة أعلاه ثم اضغط</div>
+      </div>
+      <div style="background:var(--green);color:#fff;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:700;display:flex;align-items:center;gap:5px">
+        <i class="ti ti-download" style="font-size:14px"></i> تحميل
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <div class="exp-card" onclick="setDateRange('today');exportExcelRange()" style="flex-direction:column;text-align:center;padding:14px 10px">
+        <i class="ti ti-calendar-day" style="font-size:22px;color:var(--teal);margin-bottom:5px"></i>
+        <div style="font-size:12px;font-weight:700;color:var(--teal)">يومي سريع</div>
+        <div style="font-size:10px;color:var(--muted)">اليوم الحالي</div>
+      </div>
+      <div class="exp-card" onclick="setDateRange('month');exportExcelRange()" style="flex-direction:column;text-align:center;padding:14px 10px">
+        <i class="ti ti-calendar-month" style="font-size:22px;color:var(--navy);margin-bottom:5px"></i>
+        <div style="font-size:12px;font-weight:700;color:var(--navy)">شهري سريع</div>
+        <div style="font-size:10px;color:var(--muted)" id="exp-month-lbl">الشهر الحالي</div>
+      </div>
+    </div>
+
+    <!-- PDF -->
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+      <i class="ti ti-file-text" style="font-size:15px;color:var(--red)"></i> تقارير PDF
+    </div>
+
+    <div class="exp-card" onclick="exportPDF('daily')" style="margin-bottom:8px">
+      <div class="exp-icon" style="background:#FEE2E2"><i class="ti ti-file-text" style="color:var(--red);font-size:22px"></i></div>
+      <div style="flex:1"><div class="exp-title">تقرير يومي</div><div class="exp-sub">ملخص اليوم للطباعة</div></div>
+      <i class="ti ti-printer" style="color:var(--muted);font-size:16px"></i>
+    </div>
+
+    <div class="exp-card" onclick="exportPDF('monthly')" style="margin-bottom:14px">
+      <div class="exp-icon" style="background:#FEF3C7"><i class="ti ti-report" style="color:var(--amber);font-size:22px"></i></div>
+      <div style="flex:1"><div class="exp-title">تقرير شهري</div><div class="exp-sub">ملخص الشهر للطباعة</div></div>
+      <i class="ti ti-printer" style="color:var(--muted);font-size:16px"></i>
+    </div>
+
+    <!-- Backup -->
+    <div style="font-size:12px;font-weight:700;color:var(--navy);margin-bottom:8px;display:flex;align-items:center;gap:6px">
+      <i class="ti ti-archive" style="font-size:15px;color:var(--muted)"></i> نسخ احتياطي
+    </div>
+    <div class="exp-card" onclick="backupJSON()">
+      <div class="exp-icon" style="background:#F0F4F8"><i class="ti ti-archive" style="color:var(--navy);font-size:22px"></i></div>
+      <div style="flex:1"><div class="exp-title">تصدير JSON</div><div class="exp-sub">نسخة احتياطية كاملة</div></div>
+      <i class="ti ti-download" style="color:var(--muted);font-size:16px"></i>
+    </div>
+  </div>
+</div>
+
+<!-- ══ التشغيل - السجل ════════════════════════════════════════ -->
+<div id="s-ops-hist" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">التشغيل</div><div class="tb-sub">ديزل · مولد · رشاشات</div></div>
+    <button class="ic-btn" onclick="go('s-home')"><i class="ti ti-arrow-right"></i></button>
+  </div>
+  <div class="scroll">
+    <div class="card" id="diesel-card">
+      <div class="card-title"><i class="ti ti-gas-station" style="color:var(--amber)"></i> رصيد الديزل</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div class="kpi kpi-a"><div class="kv" id="dsl-bal">0</div><div class="kl">لتر متاح</div></div>
+        <div class="kpi kpi-b"><div class="kv" id="dsl-days">—</div><div class="kl">يوم تقريباً</div></div>
+      </div>
+      <div class="diesel-bar"><div id="dsl-bar" style="height:100%;border-radius:5px;width:0%;background:var(--green);transition:width .4s"></div></div>
+      <button onclick="openM('m-diesel')" style="width:100%;margin-top:10px;padding:9px;border:1.5px dashed var(--amber);border-radius:9px;background:#FFFBEB;color:var(--amber);font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px"><i class="ti ti-plus"></i> إضافة ديزل</button>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div class="card-title" style="margin:0"><i class="ti ti-engine" style="font-size:14px"></i> تسجيل التشغيل اليومي</div>
+        <button onclick="go('s-daily');switchDaily('ops')" style="padding:5px 12px;background:var(--navy);color:#fff;border:none;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit">+ تسجيل</button>
+      </div>
+      <div id="ops-today"></div>
+    </div>
+    <div class="card"><div class="card-title"><i class="ti ti-list" style="font-size:14px"></i> السجل</div><div id="ops-list"></div></div>
+  </div>
+</div>
+
+<!-- ══ مخزون العلف ════════════════════════════════════════════ -->
+<div id="s-feed" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">مخزون العلف</div><div class="tb-sub">كل كيس = 25 كجم</div></div>
+    <button class="ic-btn" onclick="go('s-more')"><i class="ti ti-arrow-right"></i></button>
+  </div>
+  <div class="scroll">
+    <div id="feed-warn"></div>
+    <div class="kpi-grid" id="feed-kpis"></div>
+    <div class="card" style="padding:12px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:12px;color:var(--muted);font-weight:600">الرصيد بالكيلو</span>
+        <span style="font-size:22px;font-weight:800;color:var(--navy)" id="feed-kg">0 كجم</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="openM('m-feed')" style="margin-bottom:12px"><i class="ti ti-package"></i> تسجيل استلام علف</button>
+    <div class="card"><div class="card-title"><i class="ti ti-list" style="font-size:14px"></i> سجل الاستلام</div><div id="feed-list"></div></div>
+    <div class="card"><div class="card-title"><i class="ti ti-chart-bar" style="font-size:14px"></i> الاستهلاك — آخر 7 أيام</div><div id="feed-usage"></div></div>
+  </div>
+</div>
+
+<!-- ══ الإعدادات ════════════════════════════════════════════ -->
+<div id="s-settings" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">الإعدادات</div></div>
+    <button class="ic-btn" onclick="go('s-home')"><i class="ti ti-arrow-right"></i></button>
+  </div>
+  <div class="scroll">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-user-circle" style="color:var(--navy)"></i> الحساب</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div><div style="font-size:13px;font-weight:700" id="acc-email">—</div><div style="font-size:11px;color:var(--muted)" id="acc-role">—</div></div>
+      </div>
+      <button onclick="doLogout()" style="width:100%;padding:11px;border-radius:11px;border:1.5px solid #FECACA;background:#FFF5F5;color:var(--red);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px"><i class="ti ti-logout" style="font-size:15px"></i> تسجيل الخروج</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-brand-firebase" style="color:#F57C00"></i> Firebase</div>
+      <div style="background:#F0FDF4;border-radius:10px;padding:10px;margin-bottom:10px;font-size:12px;color:#065F46">✓ Firebase Config مضمّن · Project: farmii-a5972</div>
+      <button onclick="initFirebase();if(fbDB){G('fb-r').innerHTML='<span style=color:var(--green)>✓ متصل بـ Firebase</span>';G('sc-dot').style.background='var(--green)';G('sc-stxt').textContent='Firebase متصل ✓';}" class="btn btn-primary" style="margin-bottom:8px"><i class="ti ti-plug-connected"></i> اختبار الاتصال</button>
+      <button onclick="loadFromFirebase()" style="width:100%;padding:13px;border-radius:12px;border:none;background:#EFF6FF;color:var(--navy);border:1.5px solid #BFDBFE;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px"><i class="ti ti-cloud-download" style="font-size:16px"></i> تحميل البيانات من Firebase</button>
+      <div id="fb-r" style="font-size:12px;text-align:center;min-height:16px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0 0;border-top:1px solid var(--border);margin-top:8px">
+        <span style="font-size:12px;color:var(--muted)">الحالة</span>
+        <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#94A3B8" id="sc-dot"></span><span style="font-size:12px;font-weight:600;color:var(--muted)" id="sc-stxt">غير متصل</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">المزرعة</div>
+      <div class="fg"><label class="fl">الاسم</label><input class="fi" id="st-name" value="أسماك الخير"></div>
+      <div class="fg" style="margin-bottom:0"><label class="fl">المسؤول</label><input class="fi" id="st-mgr" value="د. أحمد"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">البيانات</div>
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div><div style="font-size:13px;font-weight:600" id="st-cnt">—</div><div style="font-size:11px;color:var(--muted)">محفوظ محلياً + Firebase</div></div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);padding:8px">أسماك الخير v10.2 | شركة الحقول المتعددة الزراعية</div>
+  </div>
+</div>
+
+
+<!-- ══ إدارة الموظفين ════════════════════════════════════════ -->
+<div id="s-emp-manage" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">إدارة الموظفين</div><div class="tb-sub">الأسماء والرواتب</div></div>
+    <button class="ic-btn" onclick="go('s-gm');renderGM()"><i class="ti ti-arrow-right"></i></button>
+  </div>
+  <div class="scroll">
+    <div id="emp-manage-list"></div>
+    <button class="btn btn-primary" onclick="openEmpEdit(null)"><i class="ti ti-plus"></i> إضافة موظف جديد</button>
+  </div>
+</div>
+
+<!-- ══ إدارة التصنيفات ═══════════════════════════════════════ -->
+<div id="s-cat-manage" class="screen">
+  <div class="topbar">
+    <div class="tb-left"><div class="tb-title">إدارة التصنيفات</div><div class="tb-sub">المصروفات والإيرادات</div></div>
+    <button class="ic-btn" onclick="go('s-gm');renderGM()"><i class="ti ti-arrow-right"></i></button>
+  </div>
+  <div class="scroll">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-minus-circle" style="color:var(--red)"></i> تصنيفات المصروفات (مدير المزرعة)</div>
+      <div id="cat-exp-list" style="margin-bottom:10px"></div>
+      <div class="fr"><input class="fi" id="cat-exp-new" placeholder="تصنيف جديد..."><button class="btn btn-primary" style="width:auto;padding:0 16px" onclick="addCat('expenseCats','cat-exp-new')"><i class="ti ti-plus"></i></button></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-plus-circle" style="color:var(--green)"></i> تصنيفات الإيرادات (مدير المزرعة)</div>
+      <div id="cat-inc-list" style="margin-bottom:10px"></div>
+      <div class="fr"><input class="fi" id="cat-inc-new" placeholder="تصنيف جديد..."><button class="btn btn-primary" style="width:auto;padding:0 16px" onclick="addCat('incomeCats','cat-inc-new')"><i class="ti ti-plus"></i></button></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-minus-circle" style="color:var(--red)"></i> تصنيفات تكاليف المدير العام</div>
+      <div id="cat-gmexp-list" style="margin-bottom:10px"></div>
+      <div class="fr"><input class="fi" id="cat-gmexp-new" placeholder="تصنيف جديد..."><button class="btn btn-primary" style="width:auto;padding:0 16px" onclick="addCat('gmExpenseCats','cat-gmexp-new')"><i class="ti ti-plus"></i></button></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-plus-circle" style="color:var(--green)"></i> تصنيفات إيرادات المدير العام</div>
+      <div id="cat-gminc-list" style="margin-bottom:10px"></div>
+      <div class="fr"><input class="fi" id="cat-gminc-new" placeholder="تصنيف جديد..."><button class="btn btn-primary" style="width:auto;padding:0 16px" onclick="addCat('gmIncomeCats','cat-gminc-new')"><i class="ti ti-plus"></i></button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ مودال: تكلفة/إيراد إضافي (المدير العام) ═══════════════ -->
+<div id="m-gm-entry" style="display:none" class="modal-bg" onclick="closeBg(event,'m-gm-entry')">
+  <div class="modal">
+    <div class="mh"><div class="mt">إضافة بند — المدير العام</div><button class="mcl" onclick="closeM('m-gm-entry')"><i class="ti ti-x"></i></button></div>
+    <div class="fg"><label class="fl">النوع</label>
+      <select class="fi" id="gm-type" onchange="toggleGmType()">
+        <option value="expense">تكلفة تشغيل/إدارية</option><option value="income">إيراد عام</option><option value="transfer_to_farm">تحويل من المدير العام إلى مدير المزرعة</option><option value="transfer_from_farm">تحويل من مدير المزرعة إلى المدير العام</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">التصنيف</label>
+      <select class="fi" id="gm-cat"></select>
+    </div>
+    <div class="fg"><label class="fl">التاريخ</label><input class="fi" id="gm-date" type="date"></div>
+    <div class="fg"><label class="fl">المبلغ (ر.س) ✱</label><input class="fi" id="gm-amount" type="number" inputmode="decimal" placeholder="0"></div>
+    <div class="fg" style="margin-bottom:0"><label class="fl">ملاحظة</label><input class="fi" id="gm-note" placeholder="تفاصيل إضافية..."></div>
+    <button class="btn btn-primary" onclick="saveGmEntry()" style="margin-top:14px"><i class="ti ti-check"></i> حفظ</button>
+  </div>
+</div>
+
+<!-- ══ مودال: تعديل موظف ═══════════════════════════════════════ -->
+<div id="m-emp-edit" style="display:none" class="modal-bg" onclick="closeBg(event,'m-emp-edit')">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="emp-edit-title">إضافة موظف</div><button class="mcl" onclick="closeM('m-emp-edit')"><i class="ti ti-x"></i></button></div>
+    <div class="fg"><label class="fl">الاسم ✱</label><input class="fi" id="ee-name" placeholder="اسم الموظف"></div>
+    <div class="fg"><label class="fl">الوظيفة</label><input class="fi" id="ee-role" placeholder="مثال: عامل"></div>
+    <div class="fg" style="margin-bottom:0"><label class="fl">الراتب الشهري (ر.س) ✱</label><input class="fi" id="ee-salary" type="number" inputmode="decimal" placeholder="0"></div>
+    <input type="hidden" id="ee-id">
+    <button class="btn btn-primary" onclick="saveEmpEdit()" style="margin-top:14px"><i class="ti ti-check"></i> حفظ</button>
+    <button class="btn btn-ghost" id="ee-del-btn" onclick="deleteEmp()" style="margin-top:8px;color:var(--red);border-color:#FECACA"><i class="ti ti-trash"></i> حذف الموظف</button>
+  </div>
+</div>
+
+<!-- ══ مودال: مصروف/إيراد ════════════════════════════════════ -->
+<div id="m-expense" style="display:none" class="modal-bg" onclick="closeBg(event,'m-expense')">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="exp-title">مصروف</div><button class="mcl" onclick="closeM('m-expense')"><i class="ti ti-x"></i></button></div>
+    <div class="fg"><label class="fl">النوع</label>
+      <select class="fi" id="exp-type" onchange="toggleExpType()">
+        <option value="expense">مصروف</option><option value="income">إيراد</option>
+      </select>
+    </div>
+    <div id="exp-cat-w"><div class="fg"><label class="fl">التصنيف</label>
+      <select class="fi" id="exp-cat">
+        <option value="وقود - ديزل">وقود - ديزل</option><option value="وقود - بنزين">وقود - بنزين</option>
+        <option value="غذاء عمال">غذاء عمال</option><option value="مرتبات">مرتبات</option>
+        <option value="صيانة ومعدات">صيانة ومعدات</option><option value="أدوية">أدوية</option>
+        <option value="زراعة">زراعة</option><option value="أخرى">أخرى</option>
+      </select>
+    </div></div>
+    <div id="inc-cat-w" style="display:none"><div class="fg"><label class="fl">مصدر الإيراد</label>
+      <select class="fi" id="inc-cat">
+        <option value="مبيعات أسماك">مبيعات أسماك</option><option value="رأس مال شركة">رأس مال شركة</option>
+        <option value="مرحل">مرحل من الشهر السابق</option><option value="أخرى">أخرى</option>
+      </select>
+    </div></div>
+    <div class="fg"><label class="fl">وصف إضافي</label><input class="fi" id="exp-desc" placeholder="تفاصيل إضافية..."></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">المبلغ (ر.س) ✱</label><input class="fi" id="exp-amt" type="number" inputmode="decimal" step="0.01" placeholder="0.00"></div>
+      <div class="fg"><label class="fl">نوع الدفع</label>
+        <select class="fi" id="exp-pay"><option value="كاش">كاش</option><option value="تحويل">تحويل</option><option value="أخرى">أخرى</option></select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">📷 صورة (اختياري)</label>
+      <div id="exp-photo-prev" style="display:none;margin-bottom:7px"><img id="exp-photo-img" style="max-width:100%;max-height:90px;border-radius:9px;object-fit:cover"><button onclick="clearPh('exp')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;margin-top:3px">✕ حذف</button></div>
+      <input type="file" id="exp-ph" accept="image/*" style="display:none" onchange="handlePh(event,'exp')">
+      <div class="photo-btn" onclick="document.getElementById('exp-ph').click()"><i class="ti ti-camera" style="font-size:15px"></i> التقاط صورة</div>
+    </div>
+    <div class="fg" style="margin-bottom:0"><label class="fl">ملاحظات</label><textarea class="ta" id="exp-note" placeholder="اختياري..."></textarea></div>
+    <button class="btn btn-primary" onclick="saveExp()" style="margin-top:12px"><i class="ti ti-check"></i> حفظ</button>
+  </div>
+</div>
+
+<!-- ══ مودال: بيع ════════════════════════════════════════════ -->
+<div id="m-sale" style="display:none" class="modal-bg" onclick="closeBg(event,'m-sale')">
+  <div class="modal">
+    <div class="mh"><div class="mt">بيع أسماك</div><button class="mcl" onclick="closeM('m-sale')"><i class="ti ti-x"></i></button></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">اسم العميل</label><input class="fi" id="sl-cust" placeholder="الاسم"></div>
+      <div class="fg"><label class="fl">نوع العميل</label>
+        <select class="fi" id="sl-type"><option value="عميل جملة">جملة</option><option value="عميل أفراد">أفراد</option><option value="هدية">هدية</option><option value="داخلي">داخلي</option></select>
+      </div>
+    </div>
+    <div class="fg"><label class="fl">المصدر</label>
+      <select class="fi" id="sl-src"><option>حوض 1</option><option>حوض 2</option><option>حوض 3</option><option>حوض 4</option><option>حوض 5</option><option>حوض 6</option><option>حوض 7</option><option>حوض 8</option><option>مختلط</option></select>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">الكمية (كجم) ✱</label><input class="fi" id="sl-kg" type="number" step="0.5" inputmode="decimal" placeholder="0.0" oninput="calcSale()"></div>
+      <div class="fg"><label class="fl">وزن السمكة (جم)</label><input class="fi" id="sl-wt" type="number" inputmode="numeric" placeholder="0"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">سعر الكيلو (ر.س) ✱</label><input class="fi" id="sl-price" type="number" step="0.01" inputmode="decimal" placeholder="0" oninput="calcSale()"></div>
+      <div class="fg"><label class="fl">الإجمالي (ر.س)</label><input class="fi" id="sl-total" readonly style="background:#F8FAFC;font-weight:700;color:var(--green)" placeholder="0"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">خصم (ر.س)</label><input class="fi" id="sl-disc" type="number" step="0.01" inputmode="decimal" placeholder="0" oninput="calcSale()"></div>
+      <div class="fg"><label class="fl">طريقة الدفع</label>
+        <select class="fi" id="sl-pay"><option value="نقداً">نقداً</option><option value="تحويل">تحويل</option><option value="آجل">آجل</option></select>
+      </div>
+    </div>
+    <div class="fg">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text)">
+        <input type="checkbox" id="sl-vat" onchange="calcSale()" style="width:18px;height:18px">
+        تطبيق ضريبة القيمة المضافة (15%)
+      </label>
+    </div>
+    <div class="fg" id="sl-vat-row" style="display:none">
+      <div class="fr">
+        <div class="fg"><label class="fl">الإجمالي قبل الضريبة</label><input class="fi" id="sl-subtotal" readonly style="background:#F8FAFC" placeholder="0"></div>
+        <div class="fg"><label class="fl">الضريبة (15%)</label><input class="fi" id="sl-vat-amt" readonly style="background:#F8FAFC;color:var(--amber)" placeholder="0"></div>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:0"><label class="fl">ملاحظات</label><textarea class="ta" id="sl-note" placeholder="اختياري..."></textarea></div>
+    <div id="sl-err" style="font-size:12px;color:var(--red);min-height:16px;margin:8px 0"></div>
+    <button class="btn btn-green" onclick="saveSale()"><i class="ti ti-check"></i> حفظ</button>
+  </div>
+</div>
+
+<!-- ══ مودال: دفعة راتب ══════════════════════════════════════ -->
+<div id="m-payment" style="display:none" class="modal-bg" onclick="closeBg(event,'m-payment')">
+  <div class="modal">
+    <div class="mh"><div class="mt">دفعة راتب</div><button class="mcl" onclick="closeM('m-payment')"><i class="ti ti-x"></i></button></div>
+    <div class="fg"><label class="fl">الموظف</label>
+      <select class="fi" id="pay-emp"><option value="د. أحمد">د. أحمد</option><option value="سليم">سليم</option><option value="عصام">عصام</option></select>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">المبلغ (ر.س) ✱</label><input class="fi" id="pay-amt" type="number" inputmode="decimal" placeholder="0"></div>
+      <div class="fg"><label class="fl">نوع الدفع</label>
+        <select class="fi" id="pay-type"><option value="كاش">كاش</option><option value="تحويل">تحويل</option><option value="سلفة">سلفة</option></select>
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">التاريخ</label><input class="fi" id="pay-date" type="date"></div>
+      <div class="fg"><label class="fl">الشهر المرجعي</label><input class="fi" id="pay-month" type="month"></div>
+    </div>
+    <div class="fg" style="margin-bottom:0"><label class="fl">ملاحظات</label><input class="fi" id="pay-note" placeholder="اختياري..."></div>
+    <button class="btn btn-primary" onclick="savePay()" style="margin-top:12px"><i class="ti ti-check"></i> حفظ</button>
+  </div>
+</div>
+
+<!-- ══ مودال: استلام علف ════════════════════════════════════ -->
+<div id="m-feed" style="display:none" class="modal-bg" onclick="closeBg(event,'m-feed')">
+  <div class="modal">
+    <div class="mh"><div class="mt">استلام علف</div><button class="mcl" onclick="closeM('m-feed')"><i class="ti ti-x"></i></button></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">تاريخ الاستلام</label><input class="fi" id="fd-date" type="date"></div>
+      <div class="fg"><label class="fl">عدد الأكياس ✱</label><input class="fi" id="fd-bags" type="number" inputmode="numeric" placeholder="0" oninput="calcFeedKg()"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">الكمية (كجم)</label><input class="fi" id="fd-kg" readonly style="background:#F8FAFC" placeholder="تلقائي"></div>
+      <div class="fg"><label class="fl">التكلفة (ر.س)</label><input class="fi" id="fd-cost" type="number" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">المورد</label><input class="fi" id="fd-sup" placeholder="اسم المورد"></div>
+      <div class="fg"><label class="fl">رقم الفاتورة</label><input class="fi" id="fd-inv" placeholder="اختياري"></div>
+    </div>
+    <div class="fg"><label class="fl">📷 صورة الفاتورة (اختياري)</label>
+      <div id="fd-photo-prev" style="display:none;margin-bottom:7px"><img id="fd-photo-img" style="max-width:100%;max-height:80px;border-radius:9px;object-fit:cover"><button onclick="clearPh('fd')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer">✕ حذف</button></div>
+      <input type="file" id="fd-ph" accept="image/*" style="display:none" onchange="handlePh(event,'fd')">
+      <div class="photo-btn" onclick="document.getElementById('fd-ph').click()"><i class="ti ti-camera" style="font-size:15px"></i> التقاط صورة</div>
+    </div>
+    <div class="fg" style="margin-bottom:0"><label class="fl">ملاحظات</label><textarea class="ta" id="fd-note" placeholder="اختياري..."></textarea></div>
+    <button class="btn btn-primary" onclick="saveFeed()" style="margin-top:12px"><i class="ti ti-check"></i> حفظ</button>
+  </div>
+</div>
+
+<!-- ══ مودال: إضافة ديزل ════════════════════════════════════ -->
+<div id="m-diesel" style="display:none" class="modal-bg" onclick="closeBg(event,'m-diesel')">
+  <div class="modal">
+    <div class="mh"><div class="mt">إضافة ديزل</div><button class="mcl" onclick="closeM('m-diesel')"><i class="ti ti-x"></i></button></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">الكمية (لتر) ✱</label><input class="fi" id="dsl-liters" type="number" inputmode="decimal" placeholder="0"></div>
+      <div class="fg"><label class="fl">التكلفة (ر.س)</label><input class="fi" id="dsl-cost" type="number" inputmode="decimal" placeholder="0"></div>
+    </div>
+    <div class="fg"><label class="fl">📷 صورة (اختياري)</label>
+      <div id="dsl-photo-prev" style="display:none;margin-bottom:7px"><img id="dsl-photo-img" style="max-width:100%;max-height:80px;border-radius:9px;object-fit:cover"><button onclick="clearPh('dsl')" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer">✕ حذف</button></div>
+      <input type="file" id="dsl-ph" accept="image/*" style="display:none" onchange="handlePh(event,'dsl')">
+      <div class="photo-btn" onclick="document.getElementById('dsl-ph').click()"><i class="ti ti-camera" style="font-size:15px"></i> التقاط صورة</div>
+    </div>
+    <div class="fg" style="margin-bottom:0"><label class="fl">ملاحظات</label><textarea class="ta" id="dsl-note" placeholder="اختياري..."></textarea></div>
+    <button class="btn btn-primary" onclick="saveDiesel()" style="margin-top:12px"><i class="ti ti-check"></i> حفظ وتحديث الرصيد</button>
+  </div>
+</div>
+
+<!-- ══ مودال: ملف موظف ══════════════════════════════════════ -->
+<div id="m-emp" style="display:none" class="modal-bg">
+  <div class="modal">
+    <div class="mh"><div class="mt" id="emp-name">—</div><button class="mcl" onclick="closeM('m-emp')"><i class="ti ti-x"></i></button></div>
+    <div class="tabs" style="margin-bottom:12px">
+      <button class="tab on" id="et-1" onclick="empTab('salary')">الراتب</button>
+      <button class="tab" id="et-2" onclick="empTab('att')">الحضور</button>
+      <button class="tab" id="et-3" onclick="empTab('notes')">ملاحظات</button>
+    </div>
+    <div id="emp-salary"></div>
+    <div id="emp-att" style="display:none"></div>
+    <div id="emp-notes" style="display:none">
+      <div class="fg"><label class="fl">ملاحظات الموظف</label><textarea class="ta" id="emp-note-ta" style="min-height:120px" placeholder="ملاحظات..."></textarea></div>
+      <button class="btn btn-primary" onclick="saveEmpNote()"><i class="ti ti-device-floppy"></i> حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ شريط التنقل ════════════════════════════════════════════ -->
+<nav class="bnav">
+  <button class="ni on" id="n-home" onclick="go('s-home')"><i class="ti ti-home"></i>الرئيسية</button>
+  <button class="ni" id="n-daily" onclick="go('s-daily');initDaily()"><i class="ti ti-calendar-plus"></i>اليومي</button>
+  <button class="ni" id="n-ops" onclick="go('s-ops-hist');renderOps()"><i class="ti ti-engine"></i>التشغيل</button>
+  <button class="ni" id="n-finance" onclick="go('s-finance');renderFinance()"><i class="ti ti-wallet"></i>المالية</button>
+  <button class="ni" id="n-more" onclick="go('s-more')"><i class="ti ti-dots"></i>المزيد</button>
+</nav>
+
+<script>
+// ══ ثوابت ════════════════════════════════════════════════════
+const PONDS=[
+  {id:1,n:"حوض 1",t:"كبير",c:"#3B82F6"},{id:2,n:"حوض 2",t:"كبير",c:"#10B981"},
+  {id:3,n:"حوض 3",t:"صغير",c:"#F59E0B"},{id:4,n:"حوض 4",t:"صغير",c:"#EF4444"},
+  {id:5,n:"حوض 5",t:"صغير",c:"#8B5CF6"},{id:6,n:"حوض 6",t:"صغير",c:"#EC4899"},
+  {id:7,n:"حوض 7",t:"صغير",c:"#6B7280"},{id:8,n:"حوض 8",t:"صغير",c:"#1E40AF"},
+];
+const WATER=["ممتاز","جيد","غائم","تم التغيير","يحتاج تغيير"];
+let EMPS=[];
+const DAYS=["الأحد","الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const MO=["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+const FIREBASE_CONFIG={apiKey:"AIzaSyClIDDZhILG7D3oZY51FIkyeEQAsGK_YVk",authDomain:"farmii-a5972.firebaseapp.com",projectId:"farmii-a5972",storageBucket:"farmii-a5972.firebasestorage.app",messagingSenderId:"51675095592",appId:"1:51675095592:web:eeadd9a6778282ab16cb1d"};
+
+// ══ State ════════════════════════════════════════════════════
+const DEFAULT_EMPS=[
+  {id:"ahmed",n:"د. أحمد",r:"مدير المزرعة",s:7000,e:"👨‍⚕️"},
+  {id:"salim",n:"سليم",r:"عامل",s:1800,e:"👷"},
+  {id:"issam",n:"عصام",r:"عامل",s:2000,e:"👷"},
+];
+const DEFAULT_EXP_CATS=["وقود - ديزل","وقود - بنزين","غذاء عمال","مرتبات","صيانة ومعدات","أدوية","زراعة","أخرى"];
+const DEFAULT_INC_CATS=["مبيعات أسماك","بيع سمك متفرق (بدون مصروفات)","رأس مال شركة","مرحل","أخرى"];
+const DEFAULT_GM_EXP_CATS=["علف (دفع المدير العام)","رواتب (دفع المدير العام)","مصاريف إدارية","استثمار/توسعة","أخرى"];
+const DEFAULT_GM_INC_CATS=["إيراد إداري","استرداد","أخرى"];
+function defaultSettings(){
+  return{
+    employees:JSON.parse(JSON.stringify(DEFAULT_EMPS)),
+    expenseCats:[...DEFAULT_EXP_CATS],
+    incomeCats:[...DEFAULT_INC_CATS],
+    gmExpenseCats:[...DEFAULT_GM_EXP_CATS],
+    gmIncomeCats:[...DEFAULT_GM_INC_CATS],
+    businessUnits:[
+      {id:1,name:"اللوجستيات — توصيل الطلبات",status:"نشط",revenue:0,expenses:0},
+      {id:2,name:"الزراعة — مشروع الرشاد",status:"قيد التوسع",revenue:0,expenses:0}
+    ],
+    roadmap:[
+      {title:"صفحة الملاك والحصص",desc:"توزيع تلقائي لصافي كل حوض حسب نسبة كل شريك",priority:"عالية",done:false},
+      {title:"FCR ومنحنيات النمو الفعلية",desc:"يتطلب تسجيل وزن العينات الأسبوعي بشكل منتظم",priority:"عالية",done:false},
+      {title:"وحدة التسويق الكاملة",desc:"قاعدة عملاء موحّدة وتتبع الحملات عبر كل الوحدات",priority:"متوسطة",done:false}
+    ]
+  };
+}
+let DB={daily:{},operations:{},expenses:[],sales:[],feedReceipts:[],attendance:{},salaryPayments:[],empNotes:{},diesel:{balance:0,log:[]},gmEntries:[],settings:defaultSettings()};
+let fbApp=null,fbDB=null;
+let photoStore={};
+let ce={},ap=0;
+let activeEmp="";
+let curFinTab="cash";
+
+// ══ Utils ════════════════════════════════════════════════════
+const G=id=>document.getElementById(id);
+const V=id=>G(id)?G(id).value:"";
+const KEY=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().split("T")[0];};
+let DKEY=null; // selected date for s-daily calendar — null = today
+const DK=()=>DKEY||KEY();
+const CM=()=>{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());return d.toISOString().substring(0,7);};
+const fmtDate=d=>`${DAYS[d.getDay()]} ${d.getDate()} ${MO[d.getMonth()]} ${d.getFullYear()}`;
+const N=n=>Number(n||0).toLocaleString("en",{maximumFractionDigits:1});
+const NM=n=>Number(n||0).toLocaleString("en",{maximumFractionDigits:0});
+const ago=ts=>{const d=Math.floor((Date.now()-new Date(ts))/60000);if(d<1)return"الآن";if(d<60)return d+"د";const h=Math.floor(d/60);if(h<24)return h+"س";return Math.floor(h/24)+"ي";};
+const ML=m=>{if(!m)return"—";const[y,mo]=m.split("-");return MO[+mo-1]+" "+y;};
+// Financial helpers v10.2:
+// income/expense = profit & loss only. transfers = cash movement only, never profit/loss.
+const isIncome=e=>e&&e.type==="income";
+const isExpense=e=>e&&e.type==="expense";
+const isFarmTransferIn=e=>e&&(e.type==="transfer_in"||e.type==="transfer_from_gm"||e.cat==="تحويل من المدير العام");
+const isFarmTransferOut=e=>e&&(e.type==="transfer_out"||e.type==="transfer_to_gm"||e.cat==="تحويل إلى المدير العام");
+const isTransfer=e=>e&&(e.type==="transfer_to_farm"||e.type==="transfer_from_farm"||isFarmTransferIn(e)||isFarmTransferOut(e));
+const isProfitIncome=e=>isIncome(e);
+const isProfitExpense=e=>isExpense(e);
+const isFarmCashIn=e=>isIncome(e)||isFarmTransferIn(e);
+const isFarmCashOut=e=>isExpense(e)||isFarmTransferOut(e);
+const isGmCashIn=e=>isIncome(e)||e.type==="transfer_from_farm";
+const isGmCashOut=e=>isExpense(e)||e.type==="transfer_to_farm";
+const gmEntryLabel=e=>e.type==="transfer_to_farm"?"تحويل إلى مدير المزرعة":e.type==="transfer_from_farm"?"تحويل من مدير المزرعة":isIncome(e)?"إيراد":"تكلفة";
+const gmEntryColor=e=>e.type==="transfer_from_farm"||isIncome(e)?"var(--green)":e.type==="transfer_to_farm"||isExpense(e)?"var(--red)":"var(--muted)";
+const gmEntrySign=e=>e.type==="transfer_from_farm"||isIncome(e)?"+":e.type==="transfer_to_farm"||isExpense(e)?"-":"";
+const moneySign=e=>isFarmCashIn(e)?"+":isFarmCashOut(e)?"-":"";
+const moneyColor=e=>isFarmCashIn(e)?"var(--green)":isFarmCashOut(e)?"var(--red)":"var(--muted)";
+const moneyLabel=e=>isFarmTransferIn(e)||isFarmTransferOut(e)?"تحويل داخلي":isIncome(e)?"إيراد":isExpense(e)?"مصروف":"غير مصنف";
+
+
+// ══ DB ═══════════════════════════════════════════════════════
+function loadDB(){
+  try{const d=localStorage.getItem("fv6");if(d)DB=JSON.parse(d);}catch(e){}
+  if(!DB.settings)DB.settings=defaultSettings();
+  if(!DB.settings.employees||!DB.settings.employees.length)DB.settings.employees=JSON.parse(JSON.stringify(DEFAULT_EMPS));
+  if(!DB.settings.expenseCats||!DB.settings.expenseCats.length)DB.settings.expenseCats=[...DEFAULT_EXP_CATS];
+  if(!DB.settings.incomeCats||!DB.settings.incomeCats.length)DB.settings.incomeCats=[...DEFAULT_INC_CATS];
+  if(!DB.settings.gmExpenseCats||!DB.settings.gmExpenseCats.length)DB.settings.gmExpenseCats=[...DEFAULT_GM_EXP_CATS];
+  if(!DB.settings.gmIncomeCats||!DB.settings.gmIncomeCats.length)DB.settings.gmIncomeCats=[...DEFAULT_GM_INC_CATS];
+  if(!DB.settings.businessUnits)DB.settings.businessUnits=defaultSettings().businessUnits;
+  if(!DB.settings.roadmap)DB.settings.roadmap=defaultSettings().roadmap;
+  if(!DB.gmEntries)DB.gmEntries=[];
+  EMPS=DB.settings.employees;
+}
+function saveDB(){try{localStorage.setItem("fv6",JSON.stringify(DB));}catch(e){}}
+
+// ══ Firebase ═════════════════════════════════════════════════
+function initFirebase(){
+  if(typeof firebase==="undefined")return;
+  try{
+    if(firebase.apps&&firebase.apps.length>0){fbApp=firebase.apps[0];}
+    else{fbApp=firebase.initializeApp(FIREBASE_CONFIG);}
+    fbDB=firebase.firestore();
+    try{fbDB.enablePersistence({synchronizeTabs:true}).catch(()=>{});}catch(e){}
+    if(G("sc-dot"))G("sc-dot").style.background="var(--green)";
+    if(G("sc-stxt"))G("sc-stxt").textContent="Firebase متصل ✓";
+    setupAuthListener();
+  }catch(e){fbDB=null;console.error("Firebase:",e.message);}
+}
+
+// ══ Authentication & Roles ═══════════════════════════════════
+const ROLES={
+  "multifields@inbox.com.sa":"manager",
+  "saad@inbox.com.sa":"gm"
+};
+let currentUser=null,currentRole=null,authReady=false;
+
+function setupAuthListener(){
+  if(authReady)return;authReady=true;
+  firebase.auth().onAuthStateChanged(user=>{
+    if(user){
+      currentUser=user;
+      currentRole=ROLES[(user.email||"").toLowerCase()]||"manager";
+      if(G("acc-email"))G("acc-email").textContent=user.email;
+      if(G("acc-role"))G("acc-role").textContent=currentRole==="gm"?"المدير العام":"مدير المزرعة";
+      startRealtimeSync();
+      if(currentRole==="gm"){go("s-gm");renderGM();}
+      else{go("s-home");refreshAll();}
+    }else{
+      currentUser=null;currentRole=null;
+      stopRealtimeSync();
+      go("s-login");
+    }
+  });
+}
+
+function doLogin(){
+  const email=V("login-email").trim();
+  const pass=V("login-pass");
+  G("login-err").textContent="";
+  if(!email||!pass){G("login-err").textContent="أدخل البريد وكلمة المرور";return;}
+  if(typeof firebase==="undefined"){G("login-err").textContent="تعذّر الاتصال — تحقق من الإنترنت";return;}
+  if(!fbApp)initFirebase();
+  const btn=G("login-btn");
+  btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 spin"></i> جاري الدخول...';
+  firebase.auth().signInWithEmailAndPassword(email,pass)
+    .catch(e=>{
+      const msgs={"auth/invalid-credential":"البريد أو كلمة المرور غير صحيحة","auth/invalid-email":"بريد إلكتروني غير صحيح","auth/user-not-found":"الحساب غير موجود","auth/wrong-password":"كلمة المرور غير صحيحة","auth/too-many-requests":"محاولات كثيرة — حاول بعد قليل"};
+      G("login-err").textContent=msgs[e.code]||"تعذّر تسجيل الدخول";
+      btn.disabled=false;btn.innerHTML='<i class="ti ti-login-2"></i> دخول';
+    });
+}
+
+function doLogout(){
+  if(typeof firebase==="undefined")return;
+  firebase.auth().signOut();
+}
+// ══ Real-time Sync (live across all devices) ════════════════
+let _unsubs=[];
+let _syncTimer=null;
+
+function startRealtimeSync(){
+  stopRealtimeSync();
+  if(!fbDB)return;
+
+  // Flat collections — merge remote with any unsynced local-only entries
+  const flatCols={sales:"sales",expenses:"expenses",feedReceipts:"feedReceipts",salaryPayments:"salaryPayments"};
+  Object.entries(flatCols).forEach(([key,col])=>{
+    const u=fbDB.collection(col).onSnapshot(snap=>{
+      const remote=snap.docs.map(d=>{const data={...d.data()};delete data.type;delete data.serverTs;return{...data,_fid:d.id};});
+      const remoteIds=new Set(remote.map(r=>r.id));
+      const localOnly=(DB[key]||[]).filter(l=>!remoteIds.has(l.id)&&!l._fid);
+      DB[key]=[...remote,...localOnly];
+      saveDB();onDataChange();
+    },err=>console.error("sync",col,err.message));
+    _unsubs.push(u);
+  });
+
+  // Daily collection — merge ponds + reports per date (additive)
+  const uDaily=fbDB.collection("daily").onSnapshot(snap=>{
+    snap.docs.forEach(d=>{
+      const data=d.data();const date=data.date;if(!date)return;
+      if(!DB.daily[date])DB.daily[date]={p:{},rep:{},ts:data.ts||new Date().toISOString()};
+      if(data.ponds){
+        Object.entries(data.ponds).forEach(([pid,pd])=>{
+          const existing=DB.daily[date].p[pid]||{};
+          const merged={...existing};
+          Object.entries(pd).forEach(([k,v])=>{if(v!==""&&v!==undefined&&v!==null)merged[k]=v;});
+          DB.daily[date].p[pid]=merged;
+        });
+      }
+      if(data.reports){
+        const r=data.reports;
+        DB.daily[date].rep={
+          fish:r.fish||DB.daily[date].rep?.fish||"",
+          irr:r.irrigation||DB.daily[date].rep?.irr||"",
+          farm:r.farm||DB.daily[date].rep?.farm||""
+        };
+      }
+      if(data.ts&&(!DB.daily[date].ts||data.ts>DB.daily[date].ts))DB.daily[date].ts=data.ts;
+    });
+    saveDB();onDataChange();
+  },err=>console.error("sync daily",err.message));
+  _unsubs.push(uDaily);
+
+  // Settings doc (employees, categories) — shared single doc
+  const uSettings=fbDB.collection("settings").doc("config").onSnapshot(snap=>{
+    if(snap.exists){
+      const data=snap.data();
+      DB.settings=DB.settings||defaultSettings();
+      if(data.employees&&data.employees.length)DB.settings.employees=data.employees;
+      if(data.expenseCats&&data.expenseCats.length)DB.settings.expenseCats=data.expenseCats;
+      if(data.incomeCats&&data.incomeCats.length)DB.settings.incomeCats=data.incomeCats;
+      if(data.gmExpenseCats&&data.gmExpenseCats.length)DB.settings.gmExpenseCats=data.gmExpenseCats;
+      if(data.gmIncomeCats&&data.gmIncomeCats.length)DB.settings.gmIncomeCats=data.gmIncomeCats;
+      if(data.businessUnits)DB.settings.businessUnits=data.businessUnits;
+      if(data.roadmap)DB.settings.roadmap=data.roadmap;
+      EMPS=DB.settings.employees;
+      saveDB();onDataChange();
+    }
+  },err=>console.error("sync settings",err.message));
+  _unsubs.push(uSettings);
+
+  // GM additional entries (costs/revenues added by المدير العام)
+  const uGm=fbDB.collection("gmEntries").onSnapshot(snap=>{
+    const remote=snap.docs.map(d=>{const data={...d.data()};delete data.type2;return{...data,_fid:d.id};});
+    const remoteIds=new Set(remote.map(r=>r.id));
+    const localOnly=(DB.gmEntries||[]).filter(l=>!remoteIds.has(l.id)&&!l._fid);
+    DB.gmEntries=[...remote,...localOnly];
+    saveDB();onDataChange();
+  },err=>console.error("sync gmEntries",err.message));
+  _unsubs.push(uGm);
+
+  // Operations collection
+  const uOps=fbDB.collection("operations").onSnapshot(snap=>{
+    snap.docs.forEach(d=>{
+      const data={...d.data()};const date=data.date;if(!date)return;delete data.type;
+      DB.operations[date]={...DB.operations[date],...data};
+    });
+    saveDB();onDataChange();
+  },err=>console.error("sync ops",err.message));
+  _unsubs.push(uOps);
+}
+
+function stopRealtimeSync(){
+  _unsubs.forEach(u=>{try{u();}catch(e){}});
+  _unsubs=[];
+}
+
+function onDataChange(){
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(()=>{
+    const active=document.querySelector(".screen.on")?.id;
+    if(active==="s-home")refreshAll();
+    else refreshAll(); // keep home KPIs fresh in background too
+    if(active==="s-finance")renderFinance();
+    if(active==="s-staff")renderStaff();
+    if(active==="s-feed")renderFeed();
+    if(active==="s-ops-hist")renderOps();
+    if(active==="s-daily")updateDStatus();
+    if(active==="s-gm"){renderGM();if(_gmTab==="overview")renderGmOverview();else if(_gmTab==="finance")renderGmGroupFinance();else if(_gmTab==="marketing")renderGmMarketing();else if(_gmTab==="system")renderGmSystem();}
+    if(active==="s-emp-manage")renderEmpManage();
+    if(active==="s-cat-manage")renderCatManage();
+  },350);
+}
+
+async function loadFromFirebase(){
+  if(!fbDB){initFirebase();if(!fbDB){showToast("⚠️ Firebase غير متصل");return;}}
+  try{
+    showToast("⏳ جاري تحميل البيانات من Firebase...");
+
+    // ── Flat collections: sales, expenses, feedReceipts, salaryPayments ──
+    const flatCols={sales:"sales",expenses:"expenses",feedReceipts:"feedReceipts",salaryPayments:"salaryPayments"};
+    for(const[key,col] of Object.entries(flatCols)){
+      const snap=await fbDB.collection(col).get();
+      if(snap.empty)continue;
+      const remote=snap.docs.map(d=>{const data=d.data();delete data.type;delete data.serverTs;return data;});
+      // Merge by id — remote + any local-only entries (not yet synced)
+      const remoteIds=new Set(remote.map(r=>r.id));
+      const localOnly=(DB[key]||[]).filter(l=>!remoteIds.has(l.id));
+      DB[key]=[...remote,...localOnly];
+    }
+
+    // ── Daily collection: merge ponds + reports per date ──
+    const dailySnap=await fbDB.collection("daily").get();
+    dailySnap.docs.forEach(d=>{
+      const data=d.data();
+      const date=data.date;if(!date)return;
+      if(!DB.daily[date])DB.daily[date]={p:{},rep:{},ts:data.ts||new Date().toISOString()};
+      // Merge pond data (object keyed by pond id)
+      if(data.ponds){
+        Object.entries(data.ponds).forEach(([pid,pd])=>{
+          const existing=DB.daily[date].p[pid]||{};
+          // Only overwrite fields that have actual values (non-empty)
+          const merged={...existing};
+          Object.entries(pd).forEach(([k,v])=>{if(v!==""&&v!==undefined&&v!==null)merged[k]=v;});
+          DB.daily[date].p[pid]=merged;
+        });
+      }
+      // Merge reports
+      if(data.reports){
+        const r=data.reports;
+        DB.daily[date].rep={
+          fish:r.fish||DB.daily[date].rep?.fish||"",
+          irr:r.irrigation||DB.daily[date].rep?.irr||"",
+          farm:r.farm||DB.daily[date].rep?.farm||""
+        };
+      }
+      if(data.ts&&(!DB.daily[date].ts||data.ts>DB.daily[date].ts))DB.daily[date].ts=data.ts;
+    });
+
+    // ── Operations collection ──
+    const opsSnap=await fbDB.collection("operations").get();
+    opsSnap.docs.forEach(d=>{
+      const data=d.data();
+      const date=data.date;if(!date)return;
+      delete data.type;
+      DB.operations[date]={...DB.operations[date],...data};
+    });
+
+    saveDB();refreshAll();
+    if(document.getElementById("s-finance")?.classList.contains("on"))renderFinance();
+    if(document.getElementById("s-staff")?.classList.contains("on"))renderStaff();
+    showToast("✅ تم تحديث البيانات من Firebase");
+  }catch(e){
+    console.error("Firebase load error:",e);
+    showToast("⚠️ تعذّر تحميل البيانات — تحقق من الاتصال");
+  }
+}
+
+async function toFirebase(col,data){
+  if(!fbDB){initFirebase();if(!fbDB)return;}
+  try{
+    const clean={};
+    Object.keys(data).forEach(k=>{const v=data[k];if(v!==undefined&&typeof v!=="function"&&typeof v!=="object"||Array.isArray(v)||v===null||(typeof v==="object"&&v!==null&&!(v instanceof Function)))clean[k]=v;});
+    await fbDB.collection(col).add(clean);
+  }catch(e){console.error("FB write:",e.message);}
+}
+
+async function saveSettings(){
+  saveDB();
+  if(!fbDB){initFirebase();if(!fbDB)return;}
+  try{
+    await fbDB.collection("settings").doc("config").set({
+      employees:DB.settings.employees,
+      expenseCats:DB.settings.expenseCats,
+      incomeCats:DB.settings.incomeCats,
+      gmExpenseCats:DB.settings.gmExpenseCats,
+      gmIncomeCats:DB.settings.gmIncomeCats,
+      businessUnits:DB.settings.businessUnits||[],
+      roadmap:DB.settings.roadmap||[]
+    });
+  }catch(e){console.error("FB settings write:",e.message);}
+}
+
+// ══ Navigation ═══════════════════════════════════════════════
+function go(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("on"));
+  const sc=G(id);if(!sc)return;sc.classList.add("on");
+  document.querySelectorAll(".ni").forEach(n=>n.classList.remove("on"));
+  const m={"s-home":"n-home","s-daily":"n-daily","s-finance":"n-finance","s-staff":"n-more","s-more":"n-more","s-ops-hist":"n-ops","s-feed":"n-more","s-export":"n-more","s-settings":"n-more","s-success":"n-home","s-login":null,"s-gm":null,"s-emp-manage":null,"s-cat-manage":null};
+  if(m[id]&&G(m[id]))G(m[id]).classList.add("on");
+  if(id==="s-ops-hist")renderOps();
+  if(id==="s-export"){const mn=MO[new Date().getMonth()]+" "+new Date().getFullYear();if(G("exp-month-lbl"))G("exp-month-lbl").textContent=mn+" — كل البيانات";}
+}
+
+// ══ Modals ═══════════════════════════════════════════════════
+function openM(id,type){
+  G(id).style.display="flex";
+  if(id==="m-expense"){populateCatSelects();if(type){G("exp-type").value=type;}toggleExpType();}
+  if(id==="m-gm-entry"){if(!V("gm-date"))G("gm-date").value=KEY();populateGmCatSelects();if(type){G("gm-type").value=type;}toggleGmType();}
+  if(id==="m-payment"){if(!V("pay-date"))G("pay-date").value=KEY();if(!V("pay-month"))G("pay-month").value=CM();}
+  if(id==="m-feed"){if(!V("fd-date"))G("fd-date").value=KEY();}
+}
+
+function populateCatSelects(){
+  const ec=DB.settings?.expenseCats||DEFAULT_EXP_CATS;
+  const ic=DB.settings?.incomeCats||DEFAULT_INC_CATS;
+  if(G("exp-cat")){const cur=V("exp-cat");G("exp-cat").innerHTML=ec.map(c=>`<option value="${c}">${c}</option>`).join("");if(ec.includes(cur))G("exp-cat").value=cur;}
+  if(G("inc-cat")){const cur=V("inc-cat");G("inc-cat").innerHTML=ic.map(c=>`<option value="${c}">${c}</option>`).join("");if(ic.includes(cur))G("inc-cat").value=cur;}
+}
+
+function populateGmCatSelects(){
+  const ec=DB.settings?.gmExpenseCats||DEFAULT_GM_EXP_CATS;
+  const ic=DB.settings?.gmIncomeCats||DEFAULT_GM_INC_CATS;
+  if(G("gm-cat")){
+    const t=V("gm-type");
+    const list=t==="income"?ic:(t==="transfer_to_farm"?["تحويل إلى مدير المزرعة"]:(t==="transfer_from_farm"?["تحويل من مدير المزرعة"]:ec));
+    const cur=V("gm-cat");G("gm-cat").innerHTML=list.map(c=>`<option value="${c}">${c}</option>`).join("");
+    if(list.includes(cur))G("gm-cat").value=cur;
+  }
+}
+
+// ══ إدارة الموظفين ═══════════════════════════════════════════
+function renderEmpManage(){
+  const cm=CM();
+  const html=EMPS.map(emp=>{
+    const paid=calcMonthPaid(emp.n,cm);
+    const remaining=Math.max(0,emp.s-paid);
+    return `<div class="card" style="margin-bottom:10px" onclick="openEmpEdit('${emp.id}')">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--sky);display:flex;align-items:center;justify-content:center;font-size:18px">${emp.e||"👤"}</div>
+          <div><div style="font-size:14px;font-weight:700">${emp.n}</div><div style="font-size:11px;color:var(--muted)">${emp.r||""}</div></div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-size:15px;font-weight:800;color:var(--navy)">${N(emp.s)} ر.س</div>
+          <div style="font-size:10px;color:${remaining>0?'var(--orange)':'var(--green)'}">${remaining>0?`متبقي ${N(remaining)}`:"مدفوع بالكامل"}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+  if(G("emp-manage-list"))G("emp-manage-list").innerHTML=html||`<div style="text-align:center;color:var(--muted);padding:20px;font-size:13px">لا يوجد موظفون</div>`;
+}
+
+function openEmpEdit(empId){
+  if(empId){
+    const emp=EMPS.find(e=>e.id===empId);if(!emp)return;
+    G("emp-edit-title").textContent="تعديل موظف";
+    G("ee-id").value=emp.id;G("ee-name").value=emp.n;G("ee-role").value=emp.r||"";G("ee-salary").value=emp.s;
+    G("ee-del-btn").style.display="block";
+  }else{
+    G("emp-edit-title").textContent="إضافة موظف";
+    G("ee-id").value="";G("ee-name").value="";G("ee-role").value="";G("ee-salary").value="";
+    G("ee-del-btn").style.display="none";
+  }
+  openM("m-emp-edit");
+}
+
+function saveEmpEdit(){
+  const name=V("ee-name").trim();const role=V("ee-role").trim();const salary=parseFloat(V("ee-salary"))||0;
+  if(!name){showToast("أدخل اسم الموظف");return;}
+  const id=V("ee-id");
+  if(id){
+    const emp=EMPS.find(e=>e.id===id);
+    if(emp){emp.n=name;emp.r=role;emp.s=salary;}
+  }else{
+    const newId="emp_"+Date.now();
+    EMPS.push({id:newId,n:name,r:role,s:salary,e:"👤"});
+  }
+  DB.settings.employees=EMPS;
+  saveSettings();
+  closeM("m-emp-edit");
+  renderEmpManage();refreshAll();
+  showToast("✓ تم الحفظ");
+}
+
+function deleteEmp(){
+  const id=V("ee-id");if(!id)return;
+  if(!confirm("حذف هذا الموظف؟ سجلات رواتبه السابقة تبقى محفوظة."))return;
+  EMPS=EMPS.filter(e=>e.id!==id);
+  DB.settings.employees=EMPS;
+  saveSettings();
+  closeM("m-emp-edit");
+  renderEmpManage();refreshAll();
+  showToast("✓ تم الحذف");
+}
+
+// ══ إدارة التصنيفات ═══════════════════════════════════════════
+function catRow(cat,key,idx){
+  return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:#F8FAFC;border-radius:9px;margin-bottom:6px">
+    <span style="font-size:13px">${cat}</span>
+    <button onclick="removeCat('${key}',${idx})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;padding:2px 6px"><i class="ti ti-trash"></i></button>
+  </div>`;
+}
+function renderCatManage(){
+  const s=DB.settings;
+  if(G("cat-exp-list"))G("cat-exp-list").innerHTML=s.expenseCats.map((c,i)=>catRow(c,"expenseCats",i)).join("");
+  if(G("cat-inc-list"))G("cat-inc-list").innerHTML=s.incomeCats.map((c,i)=>catRow(c,"incomeCats",i)).join("");
+  if(G("cat-gmexp-list"))G("cat-gmexp-list").innerHTML=s.gmExpenseCats.map((c,i)=>catRow(c,"gmExpenseCats",i)).join("");
+  if(G("cat-gminc-list"))G("cat-gminc-list").innerHTML=s.gmIncomeCats.map((c,i)=>catRow(c,"gmIncomeCats",i)).join("");
+}
+function addCat(key,inputId){
+  const val=V(inputId).trim();if(!val)return;
+  if(DB.settings[key].includes(val)){showToast("هذا التصنيف موجود بالفعل");return;}
+  DB.settings[key].push(val);
+  G(inputId).value="";
+  saveSettings();renderCatManage();
+}
+function removeCat(key,idx){
+  if(DB.settings[key].length<=1){showToast("يجب أن يبقى تصنيف واحد على الأقل");return;}
+  DB.settings[key].splice(idx,1);
+  saveSettings();renderCatManage();
+}
+function closeM(id){G(id).style.display="none";}
+function closeBg(e,id){if(e.target===G(id))closeM(id);}
+function toggleExpType(){
+  const t=V("exp-type");
+  G("exp-cat-w").style.display=t==="expense"?"":"none";
+  G("inc-cat-w").style.display=t==="income"?"":"none";
+  if(G("exp-title"))G("exp-title").textContent=t==="expense"?"مصروف":"إيراد";
+}
+
+function toggleGmType(){populateGmCatSelects();}
+
+async function saveGmEntry(){
+  const type=V("gm-type");const cat=V("gm-cat");const date=V("gm-date")||KEY();
+  const amount=parseFloat(V("gm-amount"));const note=V("gm-note").trim();
+  if(!amount||amount<=0){showToast("أدخل مبلغاً صحيحاً");return;}
+  const id=Date.now();
+  const entry={id,date,type,cat,amount,note,addedBy:currentUser?.email||"gm"};
+  // التحويلات الداخلية لا تدخل في ربح وخسارة المدير العام، لكنها تنعكس نقدياً بين النسختين
+  let mirror=null;
+  if(type==="transfer_to_farm"){
+    mirror={id:id+1,date,ts:new Date().toISOString(),type:"transfer_in",cat:"تحويل من المدير العام",desc:"إيداع من المدير العام",amount,payType:"تحويل",note:note||"تحويل داخلي"};
+    entry.mirrorExpenseId=mirror.id;
+  }else if(type==="transfer_from_farm"){
+    mirror={id:id+1,date,ts:new Date().toISOString(),type:"transfer_out",cat:"تحويل إلى المدير العام",desc:"إيداع للمدير العام",amount,payType:"تحويل",note:note||"تحويل داخلي"};
+    entry.mirrorExpenseId=mirror.id;
+  }
+  DB.gmEntries.push(entry);
+  if(mirror)DB.expenses.push(mirror);
+  saveDB();
+  await toFirebase("gmEntries",entry);
+  if(mirror)await toFirebase("expenses",mirror);
+  closeM("m-gm-entry");
+  G("gm-amount").value="";G("gm-note").value="";
+  renderGM();refreshAll();
+  showToast(mirror?"✓ تم حفظ التحويل وربطه بين النسختين":"✓ تم الحفظ");
+}
+
+async function deleteGmEntry(id){
+  if(!confirm("حذف هذا البند؟"))return;
+  const entry=DB.gmEntries.find(e=>e.id===id);
+  DB.gmEntries=DB.gmEntries.filter(e=>e.id!==id);
+  if(entry?.mirrorExpenseId){
+    const mirror=DB.expenses.find(e=>e.id===entry.mirrorExpenseId);
+    DB.expenses=DB.expenses.filter(e=>e.id!==entry.mirrorExpenseId);
+    if(mirror?._fid&&fbDB){try{await fbDB.collection("expenses").doc(mirror._fid).delete();}catch(e){console.error(e.message);}}
+  }
+  saveDB();
+  if(entry?._fid&&fbDB){try{await fbDB.collection("gmEntries").doc(entry._fid).delete();}catch(e){console.error(e.message);}}
+  renderGM();refreshAll();
+  showToast("✓ تم الحذف");
+}
+
+// ══ Photos ═══════════════════════════════════════════════════
+function compressImage(file,maxW,quality){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxW){h=Math.round(h*(maxW/w));w=maxW;}
+        const canvas=document.createElement("canvas");
+        canvas.width=w;canvas.height=h;
+        canvas.getContext("2d").drawImage(img,0,0,w,h);
+        resolve(canvas.toDataURL("image/jpeg",quality));
+      };
+      img.onerror=()=>resolve(ev.target.result);
+      img.src=ev.target.result;
+    };
+    reader.onerror=()=>resolve("");
+    reader.readAsDataURL(file);
+  });
+}
+async function handlePh(e,p){
+  const f=e.target.files[0];if(!f)return;
+  const prev=G(p+"-photo-prev");const img=G(p+"-photo-img");
+  const dataUrl=await compressImage(f,900,0.6);
+  photoStore[p]=dataUrl;
+  if(prev&&img){prev.style.display="block";img.src=dataUrl;}
+}
+function clearPh(p){photoStore[p]="";const prev=G(p+"-photo-prev");if(prev)prev.style.display="none";}
+
+// ══ Home ═════════════════════════════════════════════════════
+function refreshAll(){
+  if(G("h-date"))G("h-date").textContent=fmtDate(new Date());
+  const today=DB.daily[KEY()];
+  const tf=today?.p?Object.values(today.p).reduce((s,p)=>s+(parseFloat(p.feed)||0),0):0;
+  const tm=today?.p?Object.values(today.p).reduce((s,p)=>s+(parseInt(p.mort)||0),0):0;
+  const todaySal=DB.sales.filter(s=>s.date===KEY()).reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  const todayExp=DB.expenses.filter(e=>e.date===KEY()&&isExpense(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const totInc=DB.expenses.filter(isIncome).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const totExp=DB.expenses.filter(isExpense).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const farmTransferIn=DB.expenses.filter(isFarmTransferIn).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const farmTransferOut=DB.expenses.filter(isFarmTransferOut).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const totSal=DB.sales.reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  const bal=totInc+totSal+farmTransferIn-totExp-farmTransferOut;
+  const fb=feedBalance();
+
+  const ks=`border-radius:10px;padding:11px 9px;text-align:center;background:rgba(255,255,255,.13)`;
+  if(G("h-kpis"))G("h-kpis").innerHTML=`
+    <div style="${ks}"><div style="color:#fff;font-size:21px;font-weight:800;line-height:1">${N(tf)}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">علف اليوم كجم</div></div>
+    <div style="${ks};${tm>5?'background:rgba(220,38,38,.4)':''}"><div style="color:#fff;font-size:21px;font-weight:800;line-height:1">${tm}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">نفوق اليوم</div></div>
+    <div style="${ks}"><div style="color:#fff;font-size:21px;font-weight:800;line-height:1">${NM(todaySal)}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">مبيعات ر.س</div></div>
+    <div style="${ks}"><div style="color:#fff;font-size:21px;font-weight:800;line-height:1">${NM(todayExp)}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">مصروف ر.س</div></div>
+    <div style="${ks};background:${bal>=0?'rgba(5,150,105,.4)':'rgba(220,38,38,.4)'}"><div style="color:#fff;font-size:21px;font-weight:800;line-height:1">${NM(Math.abs(bal))}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">${bal>=0?"رصيد":"عجز"} ر.س</div></div>
+    <div style="${ks};${fb.bags<10&&fb.recvBags>0?'background:rgba(220,38,38,.4)':''}"><div style="color:#fff;font-size:21px;font-weight:800;line-height:1">${fb.bags}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">علف أكياس</div></div>
+  `;
+
+  // Alerts
+  let al="";
+  if(fb.bags<10&&fb.recvBags>0)al+=`<div class="alert al-w"><i class="ti ti-alert-triangle" style="flex-shrink:0;font-size:14px;margin-top:1px"></i><span>مخزون العلف منخفض — ${fb.bags} كيس</span></div>`;
+  const ps=EMPS.reduce((t,e)=>t+Math.max(0,e.s-DB.salaryPayments.filter(p=>p.emp===e.n&&p.month===CM()).reduce((s,p)=>s+(parseFloat(p.amount)||0),0)),0);
+  if(ps>0)al+=`<div class="alert al-r"><i class="ti ti-cash" style="flex-shrink:0;font-size:14px;margin-top:1px"></i><span>رواتب ${MO[new Date().getMonth()]} غير مكتملة — ${NM(ps)} ر.س</span></div>`;
+  const def=DB.sales.filter(s=>s.payType==="آجل").reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  if(def>0)al+=`<div class="alert al-b"><i class="ti ti-clock" style="flex-shrink:0;font-size:14px;margin-top:1px"></i><span>مبيعات آجلة غير محصّلة: ${NM(def)} ر.س</span></div>`;
+  if(!today)al+=`<div class="alert al-b" style="cursor:pointer" onclick="go('s-daily');initDaily()"><i class="ti ti-calendar" style="flex-shrink:0;font-size:14px;margin-top:1px"></i><span>لم تسجّل الأحواض اليوم — <strong style="text-decoration:underline">سجّل الآن</strong></span></div>`;
+  if(G("h-alerts"))G("h-alerts").innerHTML=al;
+
+  // Financial summary
+  if(G("h-fin"))G("h-fin").innerHTML=`
+    <div class="fin-summary">
+      <div class="fin-box" style="background:#F0FDF4"><div class="fin-v" style="color:var(--green)">${NM(totSal)}</div><div class="fin-l" style="color:#6B7280">مبيعات</div></div>
+      <div class="fin-box" style="background:#FFF5F5"><div class="fin-v" style="color:var(--red)">${NM(totExp)}</div><div class="fin-l" style="color:#6B7280">مصروفات</div></div>
+      <div class="fin-box" style="background:${bal>=0?'var(--sky)':'#FFF5F5'}"><div class="fin-v" style="color:${bal>=0?'var(--navy)':'var(--red)'}">${NM(Math.abs(bal))}</div><div class="fin-l" style="color:#6B7280">${bal>=0?"صافي":"عجز"}</div></div>
+    </div>
+    ${def>0?`<div style="background:#FFFBEB;border-radius:9px;padding:8px 10px;font-size:11px;color:#92400E;display:flex;align-items:center;gap:6px"><i class="ti ti-alert-triangle" style="font-size:12px;flex-shrink:0"></i><span>آجل غير محصّل: <strong>${NM(def)} ر.س</strong></span></div>`:""}
+  `;
+
+  // Pond grid
+  if(G("h-ponds"))G("h-ponds").innerHTML=PONDS.map(p=>{
+    const d=today?.p?.[p.id];const has=d&&(d.feed||d.mort);
+    return `<div onclick="go('s-daily');initDaily();setTimeout(()=>{switchDaily('ponds');setTimeout(()=>switchP(${p.id-1}),50)},50)" style="background:${has?"#F0FDF4":"#fff"};border:1.5px solid ${has?"#10B981":"var(--border)"};border-radius:13px;padding:10px 11px;cursor:pointer;box-shadow:var(--shadow)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${has?5:0}px">
+        <div style="display:flex;align-items:center;gap:5px"><div style="width:7px;height:7px;border-radius:50%;background:${p.c}"></div><span style="font-size:12px;font-weight:700;color:${has?"#065F46":"var(--navy)"}">${p.n}</span></div>
+        <span style="font-size:9px;padding:1px 6px;border-radius:9px;background:${has?"#D1FAE5":"#F1F5F9"};color:${has?"#065F46":"#94A3B8"};font-weight:600">${has?"✓":"—"}</span>
+      </div>
+      ${has?`<div style="font-size:11px;color:#374151"><span style="color:var(--teal);font-weight:600">${d.feed||0}</span> كجم${d.mort>0?` · <span style="color:var(--red);font-weight:600">${d.mort}</span>`:""}</div>`:`<div style="font-size:10px;color:#94A3B8">اضغط للتسجيل</div>`}
+    </div>`;
+  }).join("");
+
+  // Recent
+  const all=[
+    ...DB.expenses.map(e=>({...e,_t:"cash"})),
+    ...DB.sales.map(s=>({...s,_t:"sale"})),
+    ...DB.salaryPayments.map(p=>({...p,_t:"pay"})),
+    ...Object.entries(DB.operations).map(([dt,o])=>({...o,date:dt,ts:o.ts||dt,_t:"ops"})),
+    ...Object.entries(DB.daily).map(([dt,d])=>({date:dt,ts:d.ts||dt,_t:"daily",ponds:d.p})),
+  ].sort((a,b)=>new Date(b.ts||b.date)-new Date(a.ts||a.date)).slice(0,8);
+  if(G("h-recent")){
+    if(!all.length){G("h-recent").innerHTML=`<div class="empty"><i class="ti ti-history"></i>لا توجد أحداث</div>`;return;}
+    G("h-recent").innerHTML=all.map(it=>{
+      if(it._t==="cash"){const ie=isExpense(it);return `<div class="trow"><div class="ticon" style="background:${ie?"#FFF5F5":"#F0FDF4"};color:${ie?"var(--red)":"var(--green)"}"><i class="ti ti-${ie?"arrow-up":"arrow-down"}"></i></div><div style="flex:1"><div class="t-name">${it.cat}${it.desc?" — "+it.desc.substring(0,15):""}</div><div class="t-sub">${it.date}</div></div><span class="t-amt" style="color:${ie?"var(--red)":"var(--green)"}">${ie?"-":"+"} ${NM(it.amount)} ر.س</span></div>`;}
+      if(it._t==="sale")return `<div class="trow"><div class="ticon" style="background:#F5F3FF;color:var(--purple)"><i class="ti ti-fish"></i></div><div style="flex:1"><div class="t-name">${it.customer||"بيع"}</div><div class="t-sub">${it.kg} كجم · ${it.date}</div></div><span class="t-amt" style="color:var(--green)">${NM(it.net)} ر.س</span></div>`;
+      if(it._t==="pay")return `<div class="trow"><div class="ticon" style="background:#F0F9FF;color:var(--teal)"><i class="ti ti-cash"></i></div><div style="flex:1"><div class="t-name">راتب — ${it.emp}</div><div class="t-sub">${it.date}</div></div><span class="t-amt" style="color:var(--teal)">- ${NM(it.amount)} ر.س</span></div>`;
+      if(it._t==="ops")return `<div class="trow"><div class="ticon" style="background:#FFFBEB;color:var(--amber)"><i class="ti ti-engine"></i></div><div style="flex:1"><div class="t-name">تشغيل المزرعة</div><div class="t-sub">${it.date} · مولد ${it.gen_h||0}س</div></div></div>`;
+      const tf2=it.ponds?Object.values(it.ponds).reduce((s,p)=>s+(parseFloat(p.feed)||0),0):0;
+      return `<div class="trow"><div class="ticon" style="background:var(--sky);color:var(--navy)"><i class="ti ti-calendar"></i></div><div style="flex:1"><div class="t-name">تسجيل أحواض</div><div class="t-sub">${it.date} · علف: ${N(tf2)} كجم</div></div><span class="badge b-g">✓</span></div>`;
+    }).join("");
+  }
+  const _cnt=`${Object.keys(DB.daily).length+DB.expenses.length+DB.sales.length+(DB.feedReceipts||[]).length+DB.salaryPayments.length} إدخال`;
+  if(G("st-cnt"))G("st-cnt").textContent=_cnt;
+  if(G("gm-st-cnt"))G("gm-st-cnt").textContent=_cnt;
+}
+
+// ══ Daily ════════════════════════════════════════════════════
+function initDaily(){
+  DKEY=null;
+  if(G("d-date"))G("d-date").value=KEY();
+  if(G("d-past-banner"))G("d-past-banner").style.display="none";
+  loadDailyDate();
+}
+
+function changeDailyDate(){
+  const val=V("d-date");
+  if(!val)return;
+  DKEY=(val===KEY())?null:val;
+  if(G("d-past-banner"))G("d-past-banner").style.display=DKEY?"":"none";
+  loadDailyDate();
+}
+
+function goToday(){
+  DKEY=null;
+  if(G("d-date"))G("d-date").value=KEY();
+  if(G("d-past-banner"))G("d-past-banner").style.display="none";
+  loadDailyDate();
+}
+
+function loadDailyDate(){
+  const t=DB.daily[DK()];
+  ce={p:{}};
+  PONDS.forEach(p=>{const ex=t?.p?.[p.id];ce.p[p.id]={feed:ex?.feed||"",meals:ex?.meals||"",mort:ex?.mort||"",weight:ex?.weight||"",temp:ex?.temp||"",water:ex?.water||"جيد",note:ex?.note||"",photo:ex?.photo||""};});
+  ap=0;
+  if(G("d-sub"))G("d-sub").textContent=fmtDate(new Date(DK()+"T12:00:00"));
+  const activeTab=DKEY?(document.querySelector("#dt-1.on")?"ponds":document.querySelector("#dt-2.on")?"ops":"reports"):"ponds";
+  switchDaily(activeTab);
+  updateDStatus();
+}
+
+function switchDaily(tab){
+  ["dp-ponds","dp-ops","dp-reports"].forEach(id=>{const el=G(id);if(el)el.style.display="none";});
+  const m={ponds:"dp-ponds",ops:"dp-ops",reports:"dp-reports"};
+  if(G(m[tab]))G(m[tab]).style.display="block";
+  ["dt-1","dt-2","dt-3"].forEach((id,i)=>{const t=G(id);if(t)t.className=["ponds","ops","reports"][i]===tab?"tab on":"tab";});
+  if(tab==="ponds"){renderTabs();renderPond();}
+  if(tab==="ops")loadOps();
+  if(tab==="reports")loadReports();
+  updateDStatus();
+}
+
+function updateDStatus(){
+  const t=DB.daily[DK()];const o=DB.operations[DK()];
+  const pOk=t&&t.p&&Object.values(t.p).some(p=>p.feed||p.mort);
+  const oOk=!!o;const rOk=!!(t?.rep?.fish);
+  if(!G("d-status"))return;
+  G("d-status").innerHTML=[["الأحواض",pOk],["التشغيل",oOk],["التقارير",rOk]].map(([l,ok])=>
+    `<div class="ds-item ${ok?"ds-done":"ds-todo"}">${ok?"✓ ":"○ "}${l}</div>`).join("");
+}
+
+function renderTabs(){
+  if(!G("pond-tabs"))return;
+  G("pond-tabs").innerHTML=PONDS.map((p,i)=>{
+    const done=ce.p[p.id]&&(ce.p[p.id].feed||ce.p[p.id].mort);
+    return `<button class="ptab ${i===ap?"on":done?"done":""}" onclick="switchP(${i})">${p.n}</button>`;
+  }).join("");
+}
+
+function switchP(i){saveP();ap=i;renderTabs();renderPond();}
+
+function renderPond(){
+  const p=PONDS[ap];const d=ce.p[p.id];
+  if(!G("pond-form"))return;
+  G("pond-form").innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 13px;background:var(--sky);border-radius:11px;margin-bottom:12px;border:1px solid #BFDBFE">
+      <div style="width:9px;height:9px;border-radius:50%;background:${p.c}"></div>
+      <span style="font-size:14px;font-weight:700;color:var(--navy)">${p.n} — ${p.t}</span>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">علف (كجم)</label><input class="fi" id="pf" type="number" step="0.5" inputmode="decimal" placeholder="0.0" value="${d.feed}"></div>
+      <div class="fg"><label class="fl">عدد العلفات</label><input class="fi" id="pm" type="number" inputmode="numeric" placeholder="3" value="${d.meals}"></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">نفوق</label><input class="fi" id="pd" type="number" inputmode="numeric" placeholder="0" value="${d.mort}"></div>
+      <div class="fg"><label class="fl">وزن السمكة (جم)</label><input class="fi" id="pw" type="number" inputmode="numeric" placeholder="0" value="${d.weight}"></div>
+    </div>
+    <div class="fg"><label class="fl">حرارة المياه °C</label><input class="fi" id="pt" type="number" step="0.1" inputmode="decimal" placeholder="27.0" value="${d.temp}"></div>
+    <div class="fg"><label class="fl">حالة المياه</label><div class="wopts">${WATER.map(s=>`<button class="wopt ${d.water===s?"on":""}" onclick="selW(this,'${s}')">${s}</button>`).join("")}</div></div>
+    <div class="fg">
+      <label class="fl">📷 صورة القياس <span style="font-size:10px;font-weight:400;color:var(--muted)">(اختياري)</span></label>
+      ${d.photo?`<img src="${d.photo}" style="max-width:100%;max-height:80px;border-radius:9px;margin-bottom:5px;display:block"><button onclick="ce.p[${p.id}].photo='';renderPond()" style="font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;margin-bottom:6px">✕ حذف</button>`:""}
+      <input type="file" id="pp-${p.id}" accept="image/*" style="display:none" onchange="(function(e){const r=new FileReader();r.onload=ev=>{ce.p[${p.id}].photo=ev.target.result;renderPond();};r.readAsDataURL(e.target.files[0]);})(event)">
+      <div class="photo-btn" onclick="document.getElementById('pp-${p.id}').click()"><i class="ti ti-camera" style="font-size:14px"></i>${d.photo?" تغيير الصورة":" التقاط صورة"}</div>
+    </div>
+    <div class="fg"><label class="fl">ملاحظة</label><textarea class="ta" id="pn" placeholder="ملاحظات...">${d.note}</textarea></div>
+  `;
+}
+
+function saveP(){const p=PONDS[ap];if(!G("pf"))return;const d=ce.p[p.id];d.feed=V("pf");d.meals=V("pm");d.mort=V("pd");d.weight=V("pw");d.temp=V("pt");if(G("pn"))d.note=G("pn").value;}
+function selW(el,val){document.querySelectorAll(".wopt").forEach(e=>e.classList.remove("on"));el.classList.add("on");ce.p[PONDS[ap].id].water=val;}
+
+function savePonds(){
+  saveP();
+  if(!DB.daily[DK()])DB.daily[DK()]={p:{},rep:{},ts:new Date().toISOString()};
+  PONDS.forEach(p=>{DB.daily[DK()].p[p.id]=ce.p[p.id];});
+  DB.daily[DK()].ts=new Date().toISOString();
+  saveDB();updateDStatus();
+  const btn=document.querySelector("#dp-ponds .btn");
+  if(btn){const o=btn.innerHTML;btn.innerHTML='<i class="ti ti-check"></i> تم الحفظ ✓';btn.style.background="var(--green)";setTimeout(()=>{btn.innerHTML=o;btn.style.background="";},2000);}
+  const pds={};PONDS.forEach(p=>{const d=ce.p[p.id];pds[p.id]={feed:d.feed,meals:d.meals,mort:d.mort,weight:d.weight,temp:d.temp,water:d.water,note:d.note};});
+  toFirebase("daily",{type:"daily",date:DK(),ponds:pds,reports:DB.daily[DK()]?.rep||{},ts:new Date().toISOString()});
+  refreshAll();
+}
+
+function loadOps(){const o=DB.operations[DK()]||{};[["og","gen_h"],["ogd","gen_d"],["s1h","s1h"],["s1p","s1p"],["s1d","s1d"],["s2h","s2h"],["s2p","s2p"],["s2d","s2d"],["ofault","fault"]].forEach(([id,k])=>{const el=G(id);if(el)el.value=o[k]||"";});}
+
+function saveOpsDaily(){
+  const gd=parseFloat(V("ogd"))||0,s1d=parseFloat(V("s1d"))||0,s2d=parseFloat(V("s2d"))||0,td=gd+s1d+s2d;
+  const entry={gen_h:V("og"),gen_d:gd,s1h:V("s1h"),s1p:V("s1p"),s1d,s2h:V("s2h"),s2p:V("s2p"),s2d,fault:G("ofault")?.value||"",ts:new Date().toISOString()};
+  const wasRecorded=!!DB.operations[DK()];
+  DB.operations[DK()]=entry;
+  // Diesel balance deducted only on first recording of a day (avoids double-deduction when correcting past entries)
+  if(td>0&&!wasRecorded){DB.diesel.balance=Math.max(0,(DB.diesel.balance||0)-td);DB.diesel.log=[...(DB.diesel.log||[]),{date:DK(),type:"استهلاك",liters:td}];}
+  saveDB();updateDStatus();
+  const btn=document.querySelector("#dp-ops .btn");
+  if(btn){const o=btn.innerHTML;btn.innerHTML='<i class="ti ti-check"></i> تم الحفظ ✓';btn.style.background="var(--green)";setTimeout(()=>{btn.innerHTML=o;btn.style.background="";},2000);}
+  toFirebase("operations",{type:"daily_ops",date:DK(),...entry});
+  refreshAll();
+}
+
+function loadReports(){const r=DB.daily[DK()]?.rep||{};if(G("r-fish"))G("r-fish").value=r.fish||"";if(G("r-irr"))G("r-irr").value=r.irr||"";if(G("r-farm"))G("r-farm").value=r.farm||"";}
+
+function chkRep(el,boxId){const ok=el.value.trim();const box=G(boxId);if(!box)return;box.className=ok?"rbox ok":"rbox";el.className=ok?"ta ok":"ta";}
+
+function saveReports(){
+  const fish=G("r-fish")?.value||"";if(!fish.trim()){alert("تقرير الأسماك إلزامي");return;}
+  if(!DB.daily[DK()])DB.daily[DK()]={p:{},ts:new Date().toISOString()};
+  DB.daily[DK()].rep={fish,irr:G("r-irr")?.value||"",farm:G("r-farm")?.value||""};
+  saveDB();updateDStatus();
+  const btn=document.querySelector("#dp-reports .btn");
+  if(btn){const o=btn.innerHTML;btn.innerHTML='<i class="ti ti-check"></i> تم الحفظ ✓';btn.style.background="var(--green)";setTimeout(()=>{btn.innerHTML=o;btn.style.background="";},2000);}
+  toFirebase("daily",{type:"daily",date:DK(),ponds:DB.daily[DK()]?.p||{},reports:{fish,irrigation:DB.daily[DK()].rep.irr,farm:DB.daily[DK()].rep.farm},ts:new Date().toISOString()});
+  refreshAll();
+}
+
+// ══ Operations ════════════════════════════════════════════
+function renderOps(){
+  const bal=DB.diesel?.balance||0;const maxL=parseInt(localStorage.getItem("dslMax"))||500;const avgD=parseInt(localStorage.getItem("dslAvg"))||30;const days=avgD>0?Math.floor(bal/avgD):0;
+  if(G("dsl-bal"))G("dsl-bal").textContent=Math.round(bal);if(G("dsl-days"))G("dsl-days").textContent=days>0?days+" يوم":"—";
+  const pct=Math.min(100,Math.round((bal/maxL)*100));const bar=G("dsl-bar");
+  if(bar){bar.style.width=pct+"%";bar.style.background=pct<20?"var(--red)":pct<50?"var(--amber)":"var(--green)";}
+  if(G("dsl-max"))G("dsl-max").value=maxL;if(G("dsl-avg"))G("dsl-avg").value=avgD;
+  const todayOps=DB.operations[KEY()];
+  if(G("ops-today"))G("ops-today").innerHTML=todayOps?`
+    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:11px;padding:12px">
+      <div style="font-size:12px;font-weight:700;color:var(--green);margin-bottom:8px">✓ تم تسجيل التشغيل اليوم</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px">
+        ${[["مولد",todayOps.gen_h||0,"س"],["رشاش1",todayOps.s1h||0,"س"],["رشاش2",todayOps.s2h||0,"س"]].map(([l,v,u])=>`<div style="text-align:center;background:#fff;border-radius:9px;padding:8px;box-shadow:var(--shadow)"><div style="font-size:16px;font-weight:800;color:var(--navy)">${v}</div><div style="font-size:9px;color:var(--muted)">${l} (${u})</div></div>`).join("")}
+      </div>
+      ${todayOps.fault?`<div style="font-size:11px;color:var(--red);margin-top:8px;padding:7px;background:#FFF5F5;border-radius:8px">⚠️ ${todayOps.fault}</div>`:""}</div>`:
+    `<div class="alert al-b"><i class="ti ti-alert-circle" style="flex-shrink:0"></i><span>لم يسجَّل التشغيل اليوم</span></div>`;
+  const hist=Object.entries(DB.operations).sort((a,b)=>b[0].localeCompare(a[0])).slice(0,10);
+  if(G("ops-list"))G("ops-list").innerHTML=hist.length?hist.map(([dt,o])=>`
+    <div class="trow"><div class="ticon" style="background:#FFFBEB;color:var(--amber)"><i class="ti ti-engine"></i></div>
+    <div style="flex:1"><div class="t-name">${dt}</div><div class="t-sub">مولد:${o.gen_h||0}س · ر1:${o.s1h||0}س · ر2:${o.s2h||0}س${(parseFloat(o.gen_d)||0)+(parseFloat(o.s1d)||0)+(parseFloat(o.s2d)||0)>0?" · ديزل:"+((parseFloat(o.gen_d)||0)+(parseFloat(o.s1d)||0)+(parseFloat(o.s2d)||0))+"ل":""}</div>
+    ${o.fault?`<div style="font-size:11px;color:var(--red)">⚠️ ${o.fault}</div>`:""}</div></div>`).join(""):`<div class="empty"><i class="ti ti-engine"></i>لا يوجد سجل</div>`;
+}
+
+function saveDiesel(){
+  const l=parseFloat(V("dsl-liters"))||0;if(!l){alert("أدخل الكمية");return;}
+  const cost=parseFloat(V("dsl-cost"))||0;
+  if(!DB.diesel)DB.diesel={balance:0,log:[]};
+  DB.diesel.balance=(DB.diesel.balance||0)+l;
+  DB.diesel.log=[...(DB.diesel.log||[]),{date:KEY(),type:"استلام",liters:l,cost,ts:new Date().toISOString()}];
+  if(cost>0){const e={id:Date.now(),date:KEY(),ts:new Date().toISOString(),type:"expense",cat:"وقود - ديزل",desc:l+"ل ديزل",amount:cost,payType:"كاش",note:""};DB.expenses.push(e);toFirebase("expenses",e);}
+  saveDB();clearPh("dsl");closeM("m-diesel");renderOps();
+  alert(`✓ تم إضافة ${l}ل · الرصيد: ${Math.round(DB.diesel.balance)}ل`);
+}
+function saveDslSettings(){localStorage.setItem("dslMax",G("dsl-max")?.value||500);localStorage.setItem("dslAvg",G("dsl-avg")?.value||30);}
+
+// ══ Finance ══════════════════════════════════════════════
+function finTab(tab){
+  curFinTab=tab;
+  G("ft-1").className=tab==="cash"?"tab on":"tab";G("ft-2").className=tab==="sales"?"tab on":"tab";
+  G("fin-cash").style.display=tab==="cash"?"block":"none";G("fin-sales").style.display=tab==="sales"?"block":"none";
+  tab==="cash"?renderCash():renderSales();
+}
+
+function renderFinance(){
+  const exp=DB.expenses.filter(isExpense).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const inc=DB.expenses.filter(isIncome).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const farmTransferIn=DB.expenses.filter(isFarmTransferIn).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const farmTransferOut=DB.expenses.filter(isFarmTransferOut).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const sal=DB.sales.reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  const bal=inc+sal+farmTransferIn-exp-farmTransferOut;
+  if(G("fin-bal")){G("fin-bal").textContent=NM(Math.abs(bal))+" ر.س";G("fin-bal").style.color=bal>=0?"var(--green)":"var(--red)";}
+  if(G("fin-sub"))G("fin-sub").textContent=`رصيد: ${NM(Math.abs(bal))} ر.س`;
+  if(G("fin-boxes"))G("fin-boxes").innerHTML=`
+    <div class="fin-box" style="background:#F0FDF4"><div class="fin-v" style="color:var(--green)">${NM(inc)}</div><div class="fin-l" style="color:#6B7280">إيرادات العهدة</div></div>
+    <div class="fin-box" style="background:#F0FDF4"><div class="fin-v" style="color:var(--green)">${NM(sal)}</div><div class="fin-l" style="color:#6B7280">مبيعات</div></div>
+    <div class="fin-box" style="background:#FFF5F5"><div class="fin-v" style="color:var(--red)">${NM(exp)}</div><div class="fin-l" style="color:#6B7280">مصروفات</div></div>
+    <div class="fin-box" style="background:${bal>=0?"var(--sky)":"#FFF5F5"}"><div class="fin-v" style="color:${bal>=0?"var(--navy)":"var(--red)"}">${NM(Math.abs(bal))}</div><div class="fin-l" style="color:#6B7280">${bal>=0?"رصيد نقدي":"عجز نقدي"}</div></div>
+  `;
+  if((farmTransferIn+farmTransferOut)>0 && G("fin-boxes")){G("fin-boxes").insertAdjacentHTML("afterend",`<div style="background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;padding:8px 10px;font-size:11px;color:#92400E;margin-top:-4px;margin-bottom:10px">تحويلات داخلية غير محتسبة في الربح والخسارة: داخل ${NM(farmTransferIn)} ر.س · خارج ${NM(farmTransferOut)} ر.س</div>`);}
+  curFinTab==="cash"?renderCash():renderSales();
+}
+
+function renderGM(){
+  if(G("gm-date"))G("gm-date").textContent=fmtDate(new Date());
+
+  // All-time totals
+  const totSal=DB.sales.reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  const totExp=DB.expenses.filter(isExpense).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const totInc=DB.expenses.filter(isIncome).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const netProfit=totSal+totInc-totExp;
+  const totKg=DB.sales.reduce((s,e)=>s+(parseFloat(e.kg)||0),0);
+
+  // GM additional entries (costs/revenues added by المدير العام)
+  const gmExp=DB.gmEntries.filter(e=>isExpense(e)&&!isTransfer(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const gmInc=DB.gmEntries.filter(e=>isIncome(e)&&!isTransfer(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const gmNet=gmInc-gmExp;
+  const gmTransfersIn=DB.gmEntries.filter(e=>e.type==="transfer_from_farm").reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const gmTransfersOut=DB.gmEntries.filter(e=>e.type==="transfer_to_farm").reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const gmCashBalance=gmInc+gmTransfersIn-gmExp-gmTransfersOut;
+
+  // Overall combined picture
+  const overallRevenue=totSal+gmInc;
+  const overallCost=totExp+gmExp;
+  const overallNet=netProfit+gmNet;
+  const costPerKg=totKg>0?overallCost/totKg:0;
+  const marginPct=overallRevenue>0?(overallNet/overallRevenue*100):0;
+
+  // Current month
+  const cm=CM();
+  const mSal=DB.sales.filter(s=>s.date.startsWith(cm)).reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  const mExp=DB.expenses.filter(e=>e.date.startsWith(cm)&&isExpense(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const mInc=DB.expenses.filter(e=>e.date.startsWith(cm)&&isIncome(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const mNet=mSal+mInc-mExp;
+
+  const ks=`border-radius:10px;padding:11px 9px;text-align:center;background:rgba(255,255,255,.13)`;
+  if(G("gm-kpis"))G("gm-kpis").innerHTML=`
+    <div style="${ks}"><div style="color:#fff;font-size:19px;font-weight:800;line-height:1">${NM(overallRevenue)}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">إجمالي الإيرادات</div></div>
+    <div style="${ks}"><div style="color:#fff;font-size:19px;font-weight:800;line-height:1">${NM(overallCost)}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">إجمالي التكاليف</div></div>
+    <div style="${ks};background:${overallNet>=0?'rgba(5,150,105,.4)':'rgba(220,38,38,.4)'}"><div style="color:#fff;font-size:19px;font-weight:800;line-height:1">${NM(Math.abs(overallNet))}</div><div style="color:rgba(255,255,255,.7);font-size:9px;margin-top:3px">${overallNet>=0?"صافي ربح شامل":"صافي عجز شامل"}</div></div>
+  `;
+
+  // ── الملخص الشامل ──
+  if(G("gm-overall"))G("gm-overall").innerHTML=`
+    <div class="fin-summary">
+      <div class="fin-box" style="background:${netProfit>=0?'#F0FDF4':'#FFF5F5'}"><div class="fin-v" style="color:${netProfit>=0?'var(--green)':'var(--red)'}">${NM(Math.abs(netProfit))}</div><div class="fin-l" style="color:#6B7280">صافي المزرعة</div></div>
+      <div class="fin-box" style="background:${gmNet>=0?'#F0FDF4':'#FFF5F5'}"><div class="fin-v" style="color:${gmNet>=0?'var(--green)':'var(--red)'}">${NM(Math.abs(gmNet))}</div><div class="fin-l" style="color:#6B7280">صافي بنودي</div></div>
+      <div class="fin-box" style="background:${overallNet>=0?'var(--sky)':'#FFF5F5'}"><div class="fin-v" style="color:${overallNet>=0?'var(--navy)':'var(--red)'}">${NM(Math.abs(overallNet))}</div><div class="fin-l" style="color:#6B7280">${overallNet>=0?"الصافي الشامل":"العجز الشامل"}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <div class="gm-stat"><div class="v" style="color:var(--navy)">${costPerKg.toFixed(1)} ر.س</div><div class="l">تكلفة الكيلو (شامل)</div></div>
+      <div class="gm-stat"><div class="v" style="color:${marginPct>=0?'var(--green)':'var(--red)'}">${marginPct.toFixed(1)}%</div><div class="l">هامش الربح</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+      <div class="gm-stat"><div class="v" style="color:var(--green)">${NM(gmTransfersIn)}</div><div class="l">تحويلات واردة</div></div>
+      <div class="gm-stat"><div class="v" style="color:var(--red)">${NM(gmTransfersOut)}</div><div class="l">تحويلات صادرة</div></div>
+      <div class="gm-stat"><div class="v" style="color:${gmCashBalance>=0?'var(--navy)':'var(--red)'}">${NM(Math.abs(gmCashBalance))}</div><div class="l">${gmCashBalance>=0?'رصيد المدير':'عجز المدير'}</div></div>
+    </div>
+  `;
+
+  // ── بنود إضافية (المدير العام) ──
+  const sortedGm=[...DB.gmEntries].sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id);
+  if(G("gm-entries-list")){
+    if(sortedGm.length===0){
+      G("gm-entries-list").innerHTML=`<div style="text-align:center;color:var(--muted);padding:14px;font-size:12px">لا توجد بنود إضافية — اضغط + لإضافة تكلفة أو إيراد</div>`;
+    }else{
+      G("gm-entries-list").innerHTML=sortedGm.map(e=>{
+        const label=gmEntryLabel(e), color=gmEntryColor(e), sign=gmEntrySign(e);
+        const tag=isTransfer(e)?`<span class="badge b-a">تحويل داخلي</span>`:"";
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)">
+          <div>
+            <div style="font-size:12.5px;font-weight:700">${label} — ${e.cat} ${tag}</div>
+            <div style="font-size:10.5px;color:var(--muted)">${e.date}${e.note?" · "+e.note:""}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="font-size:13px;font-weight:800;color:${color}">${sign}${NM(e.amount)}</div>
+            <button onclick="deleteGmEntry(${e.id})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  if(G("gm-fin"))G("gm-fin").innerHTML=`
+    <div class="fin-summary">
+      <div class="fin-box" style="background:#F0FDF4"><div class="fin-v" style="color:var(--green)">${NM(totSal)}</div><div class="fin-l" style="color:#6B7280">مبيعات</div></div>
+      <div class="fin-box" style="background:#FFF5F5"><div class="fin-v" style="color:var(--red)">${NM(totExp)}</div><div class="fin-l" style="color:#6B7280">مصروفات</div></div>
+      <div class="fin-box" style="background:${netProfit>=0?'var(--sky)':'#FFF5F5'}"><div class="fin-v" style="color:${netProfit>=0?'var(--navy)':'var(--red)'}">${NM(Math.abs(netProfit))}</div><div class="fin-l" style="color:#6B7280">${netProfit>=0?"صافي":"عجز"}</div></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);text-align:center">إجمالي الكمية المباعة: <strong style="color:var(--text)">${N(totKg)} كجم</strong></div>
+  `;
+
+  if(G("gm-month-lbl"))G("gm-month-lbl").textContent=MO[new Date().getMonth()]+" "+new Date().getFullYear();
+  if(G("gm-month"))G("gm-month").innerHTML=`
+    <div class="fin-summary" style="margin-bottom:0">
+      <div class="fin-box" style="background:#F0FDF4"><div class="fin-v" style="color:var(--green)">${NM(mSal)}</div><div class="fin-l" style="color:#6B7280">مبيعات</div></div>
+      <div class="fin-box" style="background:#FFF5F5"><div class="fin-v" style="color:var(--red)">${NM(mExp)}</div><div class="fin-l" style="color:#6B7280">مصروفات</div></div>
+      <div class="fin-box" style="background:${mNet>=0?'var(--sky)':'#FFF5F5'}"><div class="fin-v" style="color:${mNet>=0?'var(--navy)':'var(--red)'}">${NM(Math.abs(mNet))}</div><div class="fin-l" style="color:#6B7280">${mNet>=0?"صافي":"عجز"}</div></div>
+    </div>
+  `;
+
+  // Pond status today
+  const today=DB.daily[KEY()];
+  if(G("gm-ponds"))G("gm-ponds").innerHTML=PONDS.map(p=>{
+    const d=today?.p?.[p.id];const has=d&&(d.feed||d.mort);
+    return `<div style="background:${has?"#F0FDF4":"#fff"};border:1.5px solid ${has?"#10B981":"var(--border)"};border-radius:13px;padding:10px 11px">
+      <div style="display:flex;align-items:center;gap:5px;margin-bottom:${has?5:0}px"><div style="width:7px;height:7px;border-radius:50%;background:${p.c}"></div><span style="font-size:12px;font-weight:700;color:${has?"#065F46":"var(--navy)"}">${p.n}</span></div>
+      ${has?`<div style="font-size:11px;color:#374151">علف: <strong style="color:var(--teal)">${d.feed||0}</strong> كجم${d.mort>0?` · نفوق: <strong style="color:var(--red)">${d.mort}</strong>`:""}</div>`:`<div style="font-size:10px;color:#94A3B8">لم يُسجَّل بعد</div>`}
+    </div>`;
+  }).join("");
+
+  // Alerts
+  let al="";
+  const def=DB.sales.filter(s=>s.payType==="آجل").reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  if(def>0)al+=`<div class="alert al-b"><i class="ti ti-clock" style="flex-shrink:0;font-size:14px;margin-top:1px"></i><span>مبيعات آجلة غير محصّلة: ${NM(def)} ر.س</span></div>`;
+  if(!today)al+=`<div class="alert al-w"><i class="ti ti-alert-triangle" style="flex-shrink:0;font-size:14px;margin-top:1px"></i><span>لم تُسجَّل بيانات الأحواض اليوم بعد</span></div>`;
+  if(G("gm-alerts"))G("gm-alerts").innerHTML=al;
+
+  renderGmActivityLog();
+}
+
+let _gmTab="fishfarm";
+function switchGmTab(tab){
+  _gmTab=tab;
+  const map={fishfarm:"gmp-fishfarm",overview:"gmp-overview",finance:"gmp-finance",marketing:"gmp-marketing",system:"gmp-system"};
+  Object.values(map).forEach(id=>{if(G(id))G(id).style.display="none";});
+  if(G(map[tab]))G(map[tab]).style.display="block";
+  const order=["fishfarm","overview","finance","marketing","system"];
+  order.forEach((t,i)=>{const el=G("gmt-"+(i+1));if(el)el.className=t===tab?"tab on":"tab";});
+  if(tab==="overview")renderGmOverview();
+  if(tab==="finance")renderGmGroupFinance();
+  if(tab==="marketing")renderGmMarketing();
+  if(tab==="system")renderGmSystem();
+}
+
+function fishFarmMonthTotals(){
+  const cm=CM();
+  const revenue=DB.sales.filter(s=>s.date&&s.date.startsWith(cm)).reduce((s,e)=>s+(parseFloat(e.net)||0),0)
+               + DB.expenses.filter(e=>e.date&&e.date.startsWith(cm)&&isIncome(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const expenses=DB.expenses.filter(e=>e.date&&e.date.startsWith(cm)&&isExpense(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  return{revenue,expenses,net:revenue-expenses};
+}
+
+let _charts={};
+function drawChart(id,config){
+  if(_charts[id]){try{_charts[id].destroy();}catch(e){}}
+  const el=G(id);if(!el||typeof Chart==="undefined")return;
+  _charts[id]=new Chart(el,config);
+}
+const CHART_COLORS=["#12304A","#D9A24A","#7C3AED","#12304A","#059669","#DC2626","#0EA5E9","#F59E0B"];
+
+function renderGmActivityLog(){
+  const events=[
+    ...DB.expenses.map(e=>({ts:e.ts,type:"cash",data:e})),
+    ...DB.sales.map(s=>({ts:s.ts,type:"sale",data:s})),
+    ...DB.salaryPayments.map(p=>({ts:p.ts,type:"pay",data:p})),
+    ...DB.gmEntries.map(g=>({ts:g.date+"T12:00:00",type:"gm",data:g})),
+    ...Object.entries(DB.operations).map(([dt,o])=>({ts:o.ts||dt+"T12:00:00",type:"ops",data:{...o,date:dt}})),
+    ...Object.entries(DB.daily).map(([dt,d])=>({ts:d.ts||dt+"T12:00:00",type:"daily",data:{date:dt,p:d.p,rep:d.rep}})),
+  ].filter(e=>e.ts).sort((a,b)=>new Date(b.ts)-new Date(a.ts)).slice(0,25);
+
+  if(events.length&&G("gm-last-update")){
+    G("gm-last-update").textContent=ago(events[0].ts);
+  }
+
+  if(!G("gm-activity-log"))return;
+  if(!events.length){G("gm-activity-log").innerHTML=`<div class="empty"><i class="ti ti-history"></i>لا توجد أحداث مسجّلة</div>`;return;}
+
+  G("gm-activity-log").innerHTML=events.map(ev=>{
+    const time=new Date(ev.ts).toLocaleTimeString("ar-SA",{hour:"2-digit",minute:"2-digit"});
+    const d=ev.data;
+    if(ev.type==="cash"){
+      const ie=isExpense(d);
+      return `<div class="trow"><div class="ticon" style="background:${ie?"#FFF5F5":"#F0FDF4"};color:${ie?"var(--red)":"var(--green)"}"><i class="ti ti-${ie?"arrow-up":"arrow-down"}"></i></div><div style="flex:1"><div class="t-name">${ie?"مصروف":"إيراد"} — ${d.cat}</div><div class="t-sub">${d.date} · ${time} · مدير المزرعة</div></div><span class="t-amt" style="color:${ie?"var(--red)":"var(--green)"}">${ie?"-":"+"} ${NM(d.amount)}</span></div>`;
+    }
+    if(ev.type==="sale"){
+      return `<div class="trow"><div class="ticon" style="background:#F5F3FF;color:var(--purple)"><i class="ti ti-fish"></i></div><div style="flex:1"><div class="t-name">بيع — ${d.customer||"عميل"}</div><div class="t-sub">${d.kg} كجم · ${d.date} · ${time} · مدير المزرعة</div></div><span class="t-amt" style="color:var(--green)">+ ${NM(d.net)}</span></div>`;
+    }
+    if(ev.type==="pay"){
+      return `<div class="trow"><div class="ticon" style="background:#F0F9FF;color:var(--teal)"><i class="ti ti-cash"></i></div><div style="flex:1"><div class="t-name">راتب — ${d.emp}</div><div class="t-sub">${d.date} · ${time} · مدير المزرعة</div></div><span class="t-amt" style="color:var(--teal)">- ${NM(d.amount)}</span></div>`;
+    }
+    if(ev.type==="gm"){
+      const ie=isExpense(d);
+      return `<div class="trow"><div class="ticon" style="background:${ie?"#FFF5F5":"#F0FDF4"};color:${ie?"var(--red)":"var(--green)"}"><i class="ti ti-${ie?"arrow-up":"arrow-down"}"></i></div><div style="flex:1"><div class="t-name">${ie?"تكلفة":"إيراد"} (المدير العام) — ${d.cat}</div><div class="t-sub">${d.date}${d.note?" · "+d.note:""}</div></div><span class="t-amt" style="color:${ie?"var(--red)":"var(--green)"}">${ie?"-":"+"} ${NM(d.amount)}</span></div>`;
+    }
+    if(ev.type==="ops"){
+      return `<div class="trow"><div class="ticon" style="background:#FFFBEB;color:var(--amber)"><i class="ti ti-engine"></i></div><div style="flex:1"><div class="t-name">تشغيل المزرعة</div><div class="t-sub">${d.date} · ${time} · مولد ${d.gen_h||0}س · مدير المزرعة</div></div></div>`;
+    }
+    const tf=d.p?Object.values(d.p).reduce((s,p)=>s+(parseFloat(p.feed)||0),0):0;
+    const tm=d.p?Object.values(d.p).reduce((s,p)=>s+(parseInt(p.mort)||0),0):0;
+    return `<div class="trow"><div class="ticon" style="background:var(--sky);color:var(--navy)"><i class="ti ti-calendar"></i></div><div style="flex:1"><div class="t-name">تسجيل أحواض</div><div class="t-sub">${d.date} · ${time} · علف ${N(tf)} كجم${tm>0?` · نفوق ${tm}`:""} · مدير المزرعة</div></div></div>`;
+  }).join("");
+}
+
+function renderCash(){
+  const all=[...DB.expenses].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  if(!G("cash-list"))return;
+  if(!all.length){G("cash-list").innerHTML=`<div class="empty"><i class="ti ti-wallet"></i>لا توجد عمليات</div>`;return;}
+  G("cash-list").innerHTML=all.filter(e=>isFarmCashIn(e)||isFarmCashOut(e)).map(e=>{const out=isFarmCashOut(e);const isTr=isFarmTransferIn(e)||isFarmTransferOut(e);return `<div class="trow"><div class="ticon" style="background:${out?"#FFF5F5":"#F0FDF4"};color:${out?"var(--red)":"var(--green)"}"><i class="ti ti-${out?"arrow-up":"arrow-down"}"></i></div><div style="flex:1"><div class="t-name">${e.cat}${isTr?' <span class="badge b-a">تحويل</span>':""}${e.desc?" — "+e.desc.substring(0,18):""}</div><div class="t-sub">${e.payType||"تحويل"} · ${e.date}</div></div><div style="text-align:left"><div class="t-amt" style="color:${out?"var(--red)":"var(--green)"}">${out?"-":"+"} ${NM(e.amount)} ر.س</div><div style="font-size:10px;color:#94A3B8">${ago(e.ts)}</div></div></div>`;}).join("");
+}
+
+function renderSales(){
+  const all=[...DB.sales].sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  const tot=all.reduce((s,e)=>s+(parseFloat(e.net)||0),0);const kg=all.reduce((s,e)=>s+(parseFloat(e.kg)||0),0);const def=all.filter(s=>s.payType==="آجل").reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  if(G("sal-kpis"))G("sal-kpis").innerHTML=`<div class="kpi kpi-g"><div class="kv">${NM(tot)}</div><div class="kl">إجمالي ر.س</div></div><div class="kpi kpi-t"><div class="kv">${N(kg)}</div><div class="kl">كمية كجم</div></div><div class="kpi kpi-a"><div class="kv">${NM(def)}</div><div class="kl">آجل ر.س</div></div>`;
+  if(!G("sales-list"))return;
+  if(!all.length){G("sales-list").innerHTML=`<div class="empty"><i class="ti ti-receipt"></i>لا توجد مبيعات</div>`;return;}
+  G("sales-list").innerHTML=all.map(s=>{
+    const pill=s.payType==="آجل"?`<span class="badge b-a">آجل</span>`:s.payType==="تحويل"?`<span class="badge b-b">تحويل</span>`:`<span class="badge b-g">نقداً</span>`;
+    const vatTag=s.vatApplied?`<span class="badge" style="background:#FFFBEB;color:var(--amber)">+ضريبة ${NM(s.vat)}</span>`:"";
+    return `<div class="trow"><div class="ticon" style="background:#F5F3FF;color:var(--purple)"><i class="ti ti-fish"></i></div><div style="flex:1"><div class="t-name">${s.customer||"بيع"} ${pill} ${vatTag}</div><div class="t-sub">${s.kg} كجم · ${s.src} · ${s.date}</div></div><div style="text-align:left"><div class="t-amt" style="color:var(--green)">${NM(s.net)} ر.س</div><button onclick="printInv(DB.sales.find(x=>x.id===${s.id}))" style="font-size:10px;background:#F5F3FF;color:var(--purple);border:none;padding:2px 7px;border-radius:5px;cursor:pointer;margin-top:2px;font-family:inherit">🧾 فاتورة</button></div></div>`;
+  }).join("");
+}
+
+function saveExp(){
+  const type=(V("exp-type")==="income")?"income":"expense";const amt=parseFloat(V("exp-amt"))||0;if(!amt){alert("أدخل المبلغ");return;}
+  const cat=type==="expense"?V("exp-cat"):V("inc-cat");
+  const entry={id:Date.now(),date:KEY(),ts:new Date().toISOString(),type,cat,desc:V("exp-desc"),amount:amt,payType:V("exp-pay"),note:G("exp-note")?.value||"",photo:photoStore["exp"]||""};
+  DB.expenses.push(entry);saveDB();clearPh("exp");["exp-amt","exp-desc","exp-note"].forEach(id=>{if(G(id))G(id).value="";});closeM("m-expense");
+  toFirebase("expenses",entry);refreshAll();
+  if(G("s-finance").classList.contains("on"))renderFinance();
+  showToast(type==="expense"?"✓ تم تسجيل المصروف":"✓ تم تسجيل الإيراد");
+}
+
+function calcSale(){
+  const kg=parseFloat(V("sl-kg"))||0;const pr=parseFloat(V("sl-price"))||0;const disc=parseFloat(V("sl-disc"))||0;
+  const subtotal=Math.max(0,kg*pr-disc);
+  const vatOn=G("sl-vat")?.checked;
+  const vat=vatOn?subtotal*0.15:0;
+  const total=subtotal+vat;
+  if(G("sl-vat-row"))G("sl-vat-row").style.display=vatOn?"":"none";
+  if(G("sl-subtotal"))G("sl-subtotal").value=subtotal>0?subtotal.toFixed(2):"";
+  if(G("sl-vat-amt"))G("sl-vat-amt").value=vat>0?vat.toFixed(2):"";
+  if(G("sl-total"))G("sl-total").value=total>0?total.toFixed(2):"";
+}
+
+function saveSale(){
+  const kg=parseFloat(V("sl-kg"))||0;const price=parseFloat(V("sl-price"))||0;
+  if(!kg){G("sl-err").textContent="⚠️ أدخل الكمية (كجم)";return;}if(!price){G("sl-err").textContent="⚠️ أدخل السعر";return;}
+  G("sl-err").textContent="";const disc=parseFloat(V("sl-disc"))||0;
+  const subtotal=Math.max(0,kg*price-disc);
+  const vatOn=G("sl-vat")?.checked||false;
+  const vat=vatOn?+(subtotal*0.15).toFixed(2):0;
+  const total=kg*price;const net=subtotal+vat;
+  const entry={id:Date.now(),date:KEY(),ts:new Date().toISOString(),customer:V("sl-cust"),custType:V("sl-type"),src:V("sl-src"),kg,weight:V("sl-wt"),price,total,disc,vatApplied:vatOn,vat,net,payType:V("sl-pay"),note:G("sl-note")?.value||""};
+  DB.sales.push(entry);saveDB();["sl-cust","sl-kg","sl-wt","sl-price","sl-total","sl-disc","sl-subtotal","sl-vat-amt"].forEach(id=>{if(G(id))G(id).value="";});if(G("sl-note"))G("sl-note").value="";if(G("sl-vat")){G("sl-vat").checked=false;}if(G("sl-vat-row"))G("sl-vat-row").style.display="none";
+  closeM("m-sale");toFirebase("sales",entry);refreshAll();
+  if(G("s-finance").classList.contains("on"))renderFinance();
+  showToast(`✓ تم تسجيل البيع — ${kg} كجم · ${NM(net)} ر.س`);
+}
+
+// ══ Staff ════════════════════════════════════════════════
+function calcMonthPaid(name,month){return DB.salaryPayments.filter(p=>p.emp===name&&p.month===month).reduce((s,p)=>s+(parseFloat(p.amount)||0),0);}
+
+function renderStaff(){
+  const cm=CM();const mn=MO[new Date().getMonth()]+" "+new Date().getFullYear();
+  if(G("staff-sub"))G("staff-sub").textContent=mn;
+  const mo=EMPS.reduce((s,e)=>s+e.s,0);const mp=EMPS.reduce((s,e)=>s+calcMonthPaid(e.n,cm),0);const mb=Math.max(0,mo-mp);
+  if(G("staff-kpis"))G("staff-kpis").innerHTML=`
+    <div class="kpi kpi-r"><div class="kv">${NM(mo)}</div><div class="kl">مستحق ${mn}</div></div>
+    <div class="kpi kpi-b"><div class="kv">${NM(mp)}</div><div class="kl">مدفوع ${mn}</div></div>
+    <div class="kpi ${mb>0?"kpi-a":"kpi-g"}"><div class="kv">${mb>0?NM(mb):"✅"}</div><div class="kl">${mb>0?"متبقي "+mn:"مكتمل"}</div></div>
+  `;
+  const todayAtt=DB.attendance[KEY()]||{};
+  if(G("att-today"))G("att-today").innerHTML=EMPS.map(emp=>{
+    const s=todayAtt[emp.id]||"";
+    return `<div class="trow"><div style="font-size:20px;flex-shrink:0;width:38px;text-align:center">${emp.e}</div><div style="flex:1"><div class="t-name">${emp.n}</div><div class="t-sub">${emp.r}</div></div><div class="att-btns"><button class="att-b ${s==="present"?"sp":""}" onclick="markAtt('${emp.id}','present')">✓</button><button class="att-b ${s==="absent"?"sa":""}" onclick="markAtt('${emp.id}','absent')">✗</button><button class="att-b ${s==="leave"?"sl":""}" onclick="markAtt('${emp.id}','leave')">إجازة</button></div></div>`;
+  }).join("");
+  if(G("emp-cards"))G("emp-cards").innerHTML=EMPS.map(emp=>{
+    const paid=calcMonthPaid(emp.n,cm);const bal=emp.s-paid;const pct=Math.min(100,Math.round((paid/emp.s)*100));
+    return `<div class="emp-card" onclick="openEmpProfile('${emp.id}')">
+      <div class="emp-av">${emp.e}</div>
+      <div style="flex:1">
+        <div class="t-name">${emp.n}</div><div class="t-sub">${emp.r} · ${NM(emp.s)} ر.س/شهر</div>
+        <div class="prg"><div class="prg-fill" style="width:${pct}%;background:${pct===100?"var(--green)":"var(--navy)"}"></div></div>
+        <div class="prg-meta"><span>مدفوع: ${NM(paid)}</span><span style="color:${bal>0?"var(--amber)":"var(--green)"};">${bal>0?"متبقي "+NM(bal)+" ر.س":"مكتمل ✅"}</span></div>
+      </div>
+      <i class="ti ti-chevron-left" style="color:var(--muted);font-size:16px"></i>
+    </div>`;
+  }).join("");
+}
+
+function markAtt(empId,status){if(!DB.attendance[KEY()])DB.attendance[KEY()]={};DB.attendance[KEY()][empId]=status;saveDB();renderStaff();}
+
+function openEmpProfile(empId){
+  activeEmp=empId;const emp=EMPS.find(e=>e.id===empId);if(!emp)return;
+  if(G("emp-name"))G("emp-name").textContent=emp.e+" "+emp.n;
+  G("m-emp").style.display="flex";empTab("salary");
+}
+
+function empTab(tab){
+  ["salary","att","notes"].forEach((t,i)=>{G("emp-"+t).style.display=t===tab?"block":"none";G("et-"+(i+1)).className=t===tab?"tab on":"tab";});
+  const emp=EMPS.find(e=>e.id===activeEmp);if(!emp)return;
+  if(tab==="salary")renderEmpSalary(emp);
+  if(tab==="att")renderEmpAtt(emp);
+  if(tab==="notes"&&G("emp-note-ta"))G("emp-note-ta").value=DB.empNotes?.[activeEmp]||"";
+}
+
+function renderEmpSalary(emp){
+  const cm=CM();const paid=calcMonthPaid(emp.n,cm);const bal=emp.s-paid;const pct=Math.min(100,Math.round((paid/emp.s)*100));const mn=MO[new Date().getMonth()]+" "+new Date().getFullYear();
+  const pays=[...DB.salaryPayments].filter(p=>p.emp===emp.n).sort((a,b)=>new Date(b.ts)-new Date(a.ts));
+  if(!G("emp-salary"))return;
+  G("emp-salary").innerHTML=`
+    <div style="background:var(--sky);border-radius:12px;padding:13px;margin-bottom:12px;border:1px solid #BFDBFE">
+      <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:10px">${mn}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="text-align:center;background:#fff;border-radius:10px;padding:10px;box-shadow:var(--shadow)"><div style="font-size:17px;font-weight:800;color:var(--navy)">${NM(emp.s)}</div><div style="font-size:9px;color:var(--muted);margin-top:2px">مستحق</div></div>
+        <div style="text-align:center;background:#fff;border-radius:10px;padding:10px;box-shadow:var(--shadow)"><div style="font-size:17px;font-weight:800;color:var(--teal)">${NM(paid)}</div><div style="font-size:9px;color:var(--muted);margin-top:2px">مدفوع</div></div>
+        <div style="text-align:center;background:${bal>0?"#FFFBEB":"#F0FDF4"};border-radius:10px;padding:10px;box-shadow:var(--shadow)"><div style="font-size:17px;font-weight:800;color:${bal>0?"var(--amber)":"var(--green)"}">${bal>0?NM(bal):"✅"}</div><div style="font-size:9px;color:var(--muted);margin-top:2px">${bal>0?"متبقي":"مكتمل"}</div></div>
+      </div>
+      <div class="prg" style="margin-top:10px"><div class="prg-fill" style="width:${pct}%;background:${pct===100?"var(--green)":"var(--navy)"}"></div></div>
+    </div>
+    <button onclick="closeM('m-emp');openM('m-payment');if(G('pay-emp'))G('pay-emp').value='${emp.n}'" class="btn btn-primary" style="margin-bottom:12px"><i class="ti ti-plus"></i> تسجيل دفعة</button>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">سجل المدفوعات</div>
+    ${pays.length?pays.map(p=>`<div class="trow"><div class="ticon" style="background:#F0F9FF;color:var(--teal)"><i class="ti ti-cash"></i></div><div style="flex:1"><div class="t-name">${p.payType} · ${p.date}</div><div class="t-sub">${p.month?ML(p.month):""}${p.note?" · "+p.note:""}</div></div><span class="t-amt" style="color:var(--teal)">- ${NM(p.amount)} ر.س</span></div>`).join(""):`<div class="empty" style="padding:16px"><i class="ti ti-cash"></i>لا توجد دفعات</div>`}
+  `;
+}
+
+function renderEmpAtt(emp){
+  const today=new Date();const days=[];for(let i=29;i>=0;i--){const d=new Date(today);d.setDate(today.getDate()-i);days.push(d.toISOString().split("T")[0]);}
+  const pr=days.filter(d=>DB.attendance[d]?.[emp.id]==="present").length;const ab=days.filter(d=>DB.attendance[d]?.[emp.id]==="absent").length;const lv=days.filter(d=>DB.attendance[d]?.[emp.id]==="leave").length;
+  if(!G("emp-att"))return;
+  G("emp-att").innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:#D1FAE5;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--green)">${pr}</div><div style="font-size:10px;color:var(--muted)">حاضر</div></div>
+      <div style="background:#FEE2E2;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--red)">${ab}</div><div style="font-size:10px;color:var(--muted)">غائب</div></div>
+      <div style="background:#FFFBEB;border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:var(--amber)">${lv}</div><div style="font-size:10px;color:var(--muted)">إجازة</div></div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">آخر 30 يوم</div>
+    <div style="display:flex;flex-wrap:wrap;gap:4px">${days.map(d=>{const s=DB.attendance[d]?.[emp.id]||"";const clr=s==="present"?"#10B981":s==="absent"?"#EF4444":s==="leave"?"#F59E0B":"#E2E8F0";return`<div style="width:28px;height:28px;border-radius:6px;background:${clr};display:flex;align-items:center;justify-content:center;font-size:9px;color:#fff;font-weight:600" title="${d}">${d.substring(8)}</div>`;}).join("")}</div>`;
+}
+
+function saveEmpNote(){if(!DB.empNotes)DB.empNotes={};DB.empNotes[activeEmp]=G("emp-note-ta")?.value||"";saveDB();showToast("✓ تم حفظ الملاحظات");}
+
+function savePay(){
+  const emp=V("pay-emp");const amt=parseFloat(V("pay-amt"))||0;if(!amt){alert("أدخل المبلغ");return;}
+  const entry={id:Date.now(),date:V("pay-date")||KEY(),ts:new Date().toISOString(),emp,amount:amt,payType:V("pay-type"),month:V("pay-month"),note:V("pay-note")};
+  DB.salaryPayments.push(entry);saveDB();["pay-amt","pay-note"].forEach(id=>{if(G(id))G(id).value="";});closeM("m-payment");
+  toFirebase("salaryPayments",entry);renderStaff();
+  showToast(`✓ تم تسجيل الدفعة — ${emp} · ${NM(amt)} ر.س`);
+}
+
+// ══ Feed ═════════════════════════════════════════════════
+function feedBalance(){
+  const recv=(DB.feedReceipts||[]).reduce((s,r)=>s+(r.bags||0),0);
+  const used=Object.values(DB.daily).reduce((s,d)=>{if(!d.p)return s;return s+Object.values(d.p).reduce((s2,p)=>s2+(parseFloat(p.feed)||0),0);},0);
+  return{bags:Math.round(((recv*25-used)/25)*10)/10,kg:Math.round((recv*25-used)*10)/10,recvBags:recv,usedKg:Math.round(used*10)/10};
+}
+function calcFeedKg(){const b=parseInt(V("fd-bags"))||0;if(G("fd-kg"))G("fd-kg").value=b*25||"";}
+function saveFeed(){
+  const bags=parseInt(V("fd-bags"))||0;if(!bags){alert("أدخل عدد الأكياس");return;}
+  const entry={id:Date.now(),date:V("fd-date")||KEY(),ts:new Date().toISOString(),bags,kg:bags*25,cost:parseFloat(V("fd-cost"))||0,supplier:V("fd-sup"),invoice:V("fd-inv"),note:G("fd-note")?.value||"",photo:photoStore["fd"]||""};
+  if(!DB.feedReceipts)DB.feedReceipts=[];DB.feedReceipts.push(entry);saveDB();clearPh("fd");
+  ["fd-bags","fd-kg","fd-cost","fd-sup","fd-inv"].forEach(id=>{if(G(id))G(id).value="";});if(G("fd-note"))G("fd-note").value="";
+  closeM("m-feed");toFirebase("feedReceipts",entry);renderFeed();
+  showToast(`✓ ${bags} كيس = ${bags*25} كجم`);
+}
+function renderFeed(){
+  const b=feedBalance();
+  const fk=`border-radius:12px;padding:11px;color:#fff;text-align:center`;
+  if(G("feed-kpis"))G("feed-kpis").innerHTML=`
+    <div class="kpi kpi-b" style="${fk}"><div class="kv">${b.recvBags}</div><div class="kl">أكياس مستلمة</div></div>
+    <div class="kpi kpi-a" style="${fk}"><div class="kv">${N(b.usedKg)}</div><div class="kl">كجم مستهلكة</div></div>
+    <div class="kpi ${b.bags<10?"kpi-r":"kpi-g"}" style="${fk}"><div class="kv">${b.bags}</div><div class="kl">رصيد أكياس</div></div>
+  `;
+  if(G("feed-kg"))G("feed-kg").textContent=N(b.kg)+" كجم";
+  if(G("feed-warn"))G("feed-warn").innerHTML=b.bags<10&&b.recvBags>0?`<div class="alert al-r" style="margin-bottom:10px"><i class="ti ti-alert-triangle" style="flex-shrink:0"></i><span>تحذير: الرصيد ${b.bags} كيس فقط</span></div>`:"";
+  const recs=[...(DB.feedReceipts||[])].sort((a,bs)=>new Date(bs.ts)-new Date(a.ts));
+  if(G("feed-list"))G("feed-list").innerHTML=recs.length?recs.map(r=>`<div class="trow"><div class="ticon" style="background:#FFFBEB;color:var(--amber)"><i class="ti ti-package"></i></div><div style="flex:1"><div class="t-name">${r.bags} كيس = ${r.kg} كجم</div><div class="t-sub">${r.supplier||"—"} · ${r.date}${r.cost?" · "+NM(r.cost)+" ر.س":""}</div></div><div style="font-size:10px;color:#94A3B8">${ago(r.ts)}</div></div>`).join(""):`<div class="empty"><i class="ti ti-package"></i>لا توجد استلامات</div>`;
+  const keys=Object.keys(DB.daily).sort().reverse().slice(0,7);
+  if(G("feed-usage"))G("feed-usage").innerHTML=keys.length?keys.map(dt=>{const d=DB.daily[dt];const df=d.p?Object.values(d.p).reduce((s,p)=>s+(parseFloat(p.feed)||0),0):0;return`<div class="trow"><div style="flex:1;font-size:13px;font-weight:600">${dt}</div><div style="font-size:13px;color:var(--teal)">${N(Math.round(df*10)/10)} كجم</div><div style="font-size:11px;color:var(--muted);margin-right:6px">${Math.round((df/25)*10)/10} كيس</div></div>`;}).join(""):`<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">لا توجد بيانات</div>`;
+  if(G("fd-date")&&!G("fd-date").value)G("fd-date").value=KEY();
+}
+
+// ══ Export Excel ══════════════════════════════════════════
+function setDateRange(type){
+  const today=KEY();const d=new Date();
+  let from,to;
+  if(type==="today"){from=today;to=today;}
+  else if(type==="week"){const day=d.getDay();const diff=d.getDate()-day;const mon=new Date(d);mon.setDate(diff);from=mon.toISOString().split("T")[0];to=today;}
+  else if(type==="month"){from=CM()+"-01";to=today;}
+  else if(type==="last30"){const past=new Date(d);past.setDate(d.getDate()-30);const p=new Date(past.getTime()-past.getTimezoneOffset()*60000);from=p.toISOString().split("T")[0];to=today;}
+  else{from="";to="";}
+  if(G("exp-from"))G("exp-from").value=from||"";
+  if(G("exp-to"))G("exp-to").value=to||"";
+  updateExpLabel();
+}
+
+function updateExpLabel(){
+  const from=V("exp-from");const to=V("exp-to");
+  if(!from&&!to){if(G("exp-range-lbl"))G("exp-range-lbl").textContent="حدّد الفترة أعلاه ثم اضغط";return;}
+  const lbl=from===to?`يوم ${from}`:`من ${from} إلى ${to||KEY()}`;
+  if(G("exp-range-lbl"))G("exp-range-lbl").textContent=lbl;
+}
+
+function exportExcelRange(){
+  if(typeof XLSX==="undefined"){alert("مكتبة Excel لم تحمّل — تأكد من الاتصال بالإنترنت");return;}
+  const from=V("exp-from");const to=V("exp-to")||KEY();
+  if(!from){alert("اختر تاريخ البداية أولاً");return;}
+  exportExcel("range",from,to);
+}
+
+function exportExcel(type,fromDate,toDate){
+  if(typeof XLSX==="undefined"){alert("مكتبة Excel غير محملة");return;}
+  const wb=XLSX.utils.book_new();
+  const today=KEY();const cm=CM();
+
+  function addSheet(name,rows){
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),name);
+  }
+
+  // Filter by period
+  const filterByPeriod=(arr,dateKey)=>{
+    if(type==="range"){
+      const f=fromDate||"1900-01-01";const t=toDate||"9999-12-31";
+      return arr.filter(r=>r[dateKey]&&r[dateKey]>=f&&r[dateKey]<=t);
+    }
+    if(type==="daily")return arr.filter(r=>r[dateKey]===today);
+    if(type==="monthly")return arr.filter(r=>r[dateKey]&&r[dateKey].startsWith(cm));
+    return arr;
+  };
+
+  // Sales
+  const salesHdr=["التاريخ","العميل","نوع العميل","المصدر","الكمية كجم","وزن جم","السعر","الإجمالي قبل الضريبة","خصم","ضريبة 15%","الصافي (شامل الضريبة)","طريقة الدفع","ملاحظة"];
+  const salesRows=[salesHdr,...filterByPeriod(DB.sales,"date").map(s=>[s.date,s.customer,s.custType,s.src,s.kg,s.weight,s.price,s.total,s.disc,s.vatApplied?s.vat:0,s.net,s.payType,s.note])];
+  addSheet("💵 المبيعات",salesRows);
+
+  // Expenses
+  const expHdr=["التاريخ","النوع","التصنيف","الوصف","المبلغ","نوع الدفع","صورة مرفقة","ملاحظة"];
+  const expRows=[expHdr,...filterByPeriod(DB.expenses,"date").map(e=>[e.date,moneyLabel(e),e.cat,e.desc,e.amount,e.payType,e.photo?"✓ نعم":"—",e.note])];
+  addSheet("💰 العهدة",expRows);
+
+  // Daily ponds
+  const pondHdr=["التاريخ","الحوض","علف كجم","عدد علفات","نفوق","وزن جم","حرارة","حالة المياه","ملاحظة"];
+  const pondRows=[pondHdr];
+  Object.entries(DB.daily).forEach(([dt,d])=>{
+    if(type==="daily"&&dt!==today)return;
+    if(type==="monthly"&&!dt.startsWith(cm))return;
+    if(!d.p)return;
+    PONDS.forEach(p=>{const pd=d.p[p.id];if(pd&&(pd.feed||pd.mort))pondRows.push([dt,p.n,pd.feed,pd.meals,pd.mort,pd.weight,pd.temp,pd.water,pd.note]);});
+  });
+  addSheet("🐟 الأحواض",pondRows);
+
+  // Operations
+  const opsHdr=["التاريخ","مولد ساعات","ديزل مولد","رشاش1 ساعات","سرعة1%","ديزل1","رشاش2 ساعات","سرعة2%","ديزل2","أعطال"];
+  const opsRows=[opsHdr,...Object.entries(DB.operations).filter(([dt])=>{if(type==="range"){const f=fromDate||"1900-01-01";const t=toDate||"9999-12-31";return dt>=f&&dt<=t;}return type==="all"||(type==="daily"&&dt===today)||(type==="monthly"&&dt.startsWith(cm));}).map(([dt,o])=>[dt,o.gen_h,o.gen_d,o.s1h,o.s1p,o.s1d,o.s2h,o.s2p,o.s2d,o.fault])];
+  addSheet("⚙️ التشغيل",opsRows);
+
+  // Feed
+  const feedHdr=["التاريخ","أكياس","كجم","مورد","تكلفة","فاتورة","ملاحظة"];
+  const feedRows=[feedHdr,...filterByPeriod(DB.feedReceipts||[],"date").map(r=>[r.date,r.bags,r.kg,r.supplier,r.cost,r.invoice,r.note])];
+  addSheet("📦 العلف",feedRows);
+
+  // Salary
+  const salHdr=["التاريخ","الموظف","المبلغ","الشهر","نوع الدفع","ملاحظة"];
+  const salRows=[salHdr,...filterByPeriod(DB.salaryPayments,"date").map(p=>[p.date,p.emp,p.amount,p.month,p.payType,p.note])];
+  addSheet("👷 الرواتب",salRows);
+
+
+  // GM Statement — مستقل عن مدير المزرعة ويُستخدم للتقرير السنوي
+  const gmHdr=["التاريخ","النوع","التصنيف","المبلغ","تحويل داخلي؟","ملاحظة"];
+  const gmRows=[gmHdr,...(DB.gmEntries||[]).filter(r=>{if(type==="range"){const f=fromDate||"1900-01-01";const t=toDate||"9999-12-31";return r.date&&r.date>=f&&r.date<=t;}return type==="all"||(type==="daily"&&r.date===today)||(type==="monthly"&&r.date&&r.date.startsWith(cm));}).map(r=>[r.date,gmEntryLabel(r),r.cat,r.amount,isTransfer(r)?"نعم":"لا",r.note])];
+  addSheet("📒 ستيتمنت المدير",gmRows);
+
+  // Reports
+  const repHdr=["التاريخ","تقرير الأسماك","تقرير الرشاشات","تقرير المزرعة"];
+  const repRows=[repHdr,...Object.entries(DB.daily).filter(([dt])=>{if(type==="range"){const f=fromDate||"1900-01-01";const t=toDate||"9999-12-31";return dt>=f&&dt<=t;}return type==="all"||(type==="daily"&&dt===today)||(type==="monthly"&&dt.startsWith(cm));}).filter(([,d])=>d.rep?.fish).map(([dt,d])=>[dt,d.rep.fish,d.rep.irr,d.rep.farm])];
+  addSheet("✍️ التقارير",repRows);
+
+  const label=type==="range"?(fromDate===toDate?fromDate:`${fromDate}_${toDate}`):type==="daily"?today:type==="monthly"?cm:"كامل";
+  XLSX.writeFile(wb,`أسماك_الخير_${label}.xlsx`);
+  showToast("✓ تم تحميل ملف Excel");
+}
+
+// ══ Export PDF ════════════════════════════════════════════
+function exportPDF(type){
+  const today=KEY();const cm=CM();const fn=V("st-name")||"أسماك الخير";
+  const isDaily=type==="daily";
+  const d=DB.daily[today];
+  const tf=d?.p?Object.values(d.p).reduce((s,p)=>s+(parseFloat(p.feed)||0),0):0;
+  const tm=d?.p?Object.values(d.p).reduce((s,p)=>s+(parseInt(p.mort)||0),0):0;
+  const salesToday=DB.sales.filter(s=>s.date===(isDaily?today:s.date.startsWith(cm)?s.date:"")).reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  const expToday=DB.expenses.filter(e=>e.date===(isDaily?today:e.date.startsWith(cm)?e.date:"")&&isExpense(e)).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+  const w=window.open("","_blank","width=820,height=900");
+  const period=isDaily?`يوم ${today}`:`شهر ${MO[parseInt(cm.split("-")[1])-1]} ${cm.split("-")[0]}`;
+  const salesRows=DB.sales.filter(s=>isDaily?s.date===today:s.date.startsWith(cm));
+  const expRows=DB.expenses.filter(e=>isDaily?e.date===today:e.date.startsWith(cm));
+  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>تقرير ${period}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;direction:rtl;color:#1e293b;padding:20px}
+.hdr{background:linear-gradient(135deg,#12304A,#0B1F33);color:#fff;padding:18px 24px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center}
+.hn{font-size:20px;font-weight:700}.hp{font-size:12px;opacity:.8;margin-top:3px}
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.kcard{border-radius:10px;padding:12px;text-align:center;color:#fff}
+.kv{font-size:20px;font-weight:800}.kl{font-size:10px;opacity:.8;margin-top:2px}
+.section{margin-bottom:20px}.sh{font-size:14px;font-weight:700;color:#12304A;border-bottom:2px solid #12304A;padding-bottom:6px;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:12px}th{background:#12304A;color:#fff;padding:8px 10px;text-align:center}
+td{padding:7px 10px;border-bottom:1px solid #E2E8F0;text-align:center}tr:nth-child(even) td{background:#F8FAFC}
+.ftr{text-align:center;font-size:10px;color:#94A3B8;border-top:2px solid #12304A;padding-top:12px;margin-top:20px}
+.np{margin-bottom:14px;display:flex;gap:8px}@media print{.np{display:none}}
+</style></head><body>
+<div class="np"><button onclick="window.print()" style="padding:8px 18px;background:#12304A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit">🖨️ طباعة</button><button onclick="window.close()" style="padding:8px 14px;background:#F1F5F9;color:#374151;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">✕</button></div>
+<div class="hdr"><div><div class="hn">${fn}</div><div class="hp">شركة الحقول المتعددة الزراعية</div></div><div style="text-align:left"><div style="font-size:18px;font-weight:700">تقرير ${isDaily?"يومي":"شهري"}</div><div class="hp">${period}</div></div></div>
+<div class="kgrid">
+  <div class="kcard" style="background:#12304A"><div class="kv">${N(tf)}</div><div class="kl">علف كجم</div></div>
+  <div class="kcard" style="background:#DC2626"><div class="kv">${tm}</div><div class="kl">نفوق</div></div>
+  <div class="kcard" style="background:#059669"><div class="kv">${NM(salesRows.reduce((s,e)=>s+(parseFloat(e.net)||0),0))}</div><div class="kl">مبيعات ر.س</div></div>
+  <div class="kcard" style="background:#D97706"><div class="kv">${NM(expRows.filter(isExpense).reduce((s,e)=>s+(parseFloat(e.amount)||0),0))}</div><div class="kl">مصروفات ر.س</div></div>
+</div>
+${salesRows.length?`<div class="section"><div class="sh">المبيعات</div><table><thead><tr><th>التاريخ</th><th>العميل</th><th>الكمية</th><th>الصافي</th><th>الدفع</th></tr></thead><tbody>${salesRows.map(s=>`<tr><td>${s.date}</td><td>${s.customer||"—"}</td><td>${s.kg} كجم</td><td>${NM(s.net)} ر.س</td><td>${s.payType}</td></tr>`).join("")}</tbody></table></div>`:""}
+${expRows.length?`<div class="section"><div class="sh">المصروفات والإيرادات</div><table><thead><tr><th>التاريخ</th><th>النوع</th><th>التصنيف</th><th>المبلغ</th></tr></thead><tbody>${expRows.map(e=>`<tr><td>${e.date}</td><td>${moneyLabel(e)}</td><td>${e.cat}</td><td style="color:${isExpense(e)?"#DC2626":isIncome(e)?"#059669":"#64748B"}">${isExpense(e)?"-":isIncome(e)?"+":""} ${NM(e.amount)} ر.س</td></tr>`).join("")}</tbody></table></div>`:""}
+${d?.rep?.fish?`<div class="section"><div class="sh">التقارير الكتابية</div>${d.rep.fish?`<p style="margin-bottom:8px;font-size:12px"><strong>الأسماك:</strong> ${d.rep.fish}</p>`:""}${d.rep.irr?`<p style="margin-bottom:8px;font-size:12px"><strong>الرشاشات:</strong> ${d.rep.irr}</p>`:""}${d.rep.farm?`<p style="font-size:12px"><strong>المزرعة:</strong> ${d.rep.farm}</p>`:""}</div>`:""}
+${(()=>{
+  const feedRows=(DB.feedReceipts||[]).filter(f=>isDaily?f.date===today:f.date&&f.date.startsWith(cm));
+  const photos=[...expRows.filter(e=>e.photo).map(e=>({photo:e.photo,label:`${moneyLabel(e)} — ${e.cat} — ${NM(e.amount)} ر.س`,date:e.date})),
+                 ...feedRows.filter(f=>f.photo).map(f=>({photo:f.photo,label:`فاتورة علف — ${f.supplier||""} — ${N(f.bags||0)} كيس`,date:f.date}))];
+  if(!photos.length)return"";
+  return `<div class="section"><div class="sh">المرفقات والصور (${photos.length})</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">${photos.map(p=>`<div style="text-align:center"><img src="${p.photo}" style="width:100%;border-radius:8px;border:1px solid #E2E8F0;object-fit:cover;max-height:180px"><div style="font-size:10px;color:#64748B;margin-top:4px">${p.label}<br>${p.date}</div></div>`).join("")}</div></div>`;
+})()}
+<div class="ftr">${fn} · وثيلان - الدوادمي - الرياض · ر.ض: 312761382200003 · تقرير مُولَّد آلياً</div>
+</body></html>`);w.document.close();
+}
+
+// ══ Backup JSON ═══════════════════════════════════════════
+function backupJSON(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:"application/json"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=`backup_${KEY()}.json`;a.click();
+  showToast("✓ تم تحميل النسخة الاحتياطية");
+}
+
+// ══ Invoice ═══════════════════════════════════════════════
+function printInv(s){
+  if(!s)return;const fn=V("st-name")||"أسماك الخير";const inv="INV-"+s.date.replace(/-/g,"")+"-"+String(s.id).slice(-4);
+  const w=window.open("","_blank","width=820,height=900");
+  w.document.write(`<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"><title>فاتورة ${inv}</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;direction:rtl;color:#1e293b}
+.page{max-width:740px;margin:0 auto}.hdr{background:linear-gradient(135deg,#12304A,#1D4E76);color:#fff;padding:20px 28px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:12px}.lic{width:52px;height:52px;background:rgba(255,255,255,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px}
+.cn{font-size:19px;font-weight:700}.cs{font-size:11px;opacity:.8;margin-top:2px}.it{text-align:left}.it h2{font-size:22px;font-weight:800}.it p{font-size:11px;opacity:.8}
+.body{padding:22px 28px}.meta{display:flex;gap:12px;margin-bottom:18px}.mb{flex:1;background:#F8FAFC;border:1px solid #E2E8F0;border-radius:9px;padding:11px}
+.ml{font-size:10px;color:#64748B;font-weight:600;margin-bottom:3px}.mv{font-size:13px;font-weight:600}table{width:100%;border-collapse:collapse;margin-bottom:18px}
+thead tr{background:#12304A;color:#fff}th{padding:9px 11px;font-size:11px;text-align:center}td{padding:9px 11px;font-size:12px;border-bottom:1px solid #E2E8F0;text-align:center}tr:nth-child(even) td{background:#F8FAFC}
+.tots{max-width:240px;margin-bottom:18px}.tr{display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-bottom:1px solid #E2E8F0}
+.trg{font-weight:700;font-size:15px;color:#12304A;border-top:2px solid #12304A;border-bottom:none;padding-top:7px;margin-top:3px}
+.stat{display:inline-flex;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;margin-bottom:16px}
+.sp{background:#D1FAE5;color:#065F46}.sd{background:#FEF3C7;color:#92400E}
+.ftr{background:#F8FAFC;border-top:3px solid #12304A;padding:14px 28px;display:flex;justify-content:space-between;font-size:10px;color:#64748B}
+.np{padding:11px 28px;background:#EFF6FF;display:flex;gap:8px}@media print{.np{display:none}}</style></head><body>
+<div class="np"><button onclick="window.print()" style="padding:8px 18px;background:#12304A;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;font-family:inherit">🖨️ طباعة</button><button onclick="window.close()" style="padding:8px 14px;background:#F1F5F9;color:#374151;border:none;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit">✕</button></div>
+<div class="page"><div class="hdr"><div class="logo"><div class="lic">🐟</div><div><div class="cn">${fn}</div><div class="cs">شركة الحقول المتعددة الزراعية</div><div class="cs" style="direction:ltr;text-align:right">+966580218944</div></div></div><div class="it"><h2>فاتورة بيع</h2><p>${inv}</p><p>${s.date}</p></div></div>
+<div class="body">
+<div class="meta"><div class="mb"><div class="ml">العميل</div><div class="mv">${s.customer||"نقدي"}</div><div style="font-size:10px;color:#64748B">${s.custType||""}</div></div><div class="mb"><div class="ml">الدفع</div><div class="mv">${s.payType}</div></div><div class="mb"><div class="ml">المصدر</div><div class="mv">${s.src}</div></div><div class="mb"><div class="ml">الرقم الضريبي</div><div class="mv" style="font-size:10px;direction:ltr">312761382200003</div></div></div>
+<table><thead><tr><th>#</th><th>البيان</th><th>الكمية</th><th>الوزن</th><th>السعر</th><th>الإجمالي</th></tr></thead><tbody><tr><td>1</td><td>أسماك طازجة</td><td>${s.kg} كجم</td><td>${s.weight?"جم "+s.weight:"—"}</td><td>${s.price?" ر.س"+s.price:"—"}</td><td>${parseFloat(s.total||0).toLocaleString("en")} ر.س</td></tr></tbody></table>
+<div class="tots"><div class="tr"><span>إجمالي</span><span>${parseFloat(s.total||0).toLocaleString("en")} ر.س</span></div>${s.disc&&parseFloat(s.disc)>0?`<div class="tr"><span>خصم</span><span>- ${parseFloat(s.disc).toLocaleString("en")} ر.س</span></div>`:""}${s.vatApplied&&parseFloat(s.vat)>0?`<div class="tr"><span>ضريبة القيمة المضافة (15%)</span><span>+ ${parseFloat(s.vat).toLocaleString("en")} ر.س</span></div>`:""}<div class="tr trg"><span>الصافي</span><span>${parseFloat(s.net||0).toLocaleString("en")} ر.س</span></div></div>
+<span class="stat ${s.payType==="آجل"?"sd":"sp"}">${s.payType==="آجل"?"⏳ آجل":"✅ "+s.payType}</span>${s.note?`<p style="font-size:11px;color:#64748B"><strong>ملاحظات:</strong> ${s.note}</p>`:""}
+</div><div class="ftr"><span>${fn} · وثيلان - الدوادمي - الرياض</span><span>فاتورة إلكترونية</span></div></div></body></html>`);w.document.close();
+}
+
+// ══ Toast ═════════════════════════════════════════════════
+function showToast(msg){
+  const t=document.createElement("div");
+  t.style.cssText="position:fixed;bottom:calc(80px + var(--sb));left:50%;transform:translateX(-50%);background:#1E293B;color:#fff;padding:10px 20px;border-radius:25px;font-size:13px;font-weight:600;z-index:100;white-space:nowrap;box-shadow:0 4px 12px rgba(0,0,0,.3);font-family:inherit";
+  t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2500);
+}
+
+// ══ Clear ═════════════════════════════════════════════════
+async function clearAll(){
+  if(!confirm("⚠️ سيتم حذف جميع البيانات نهائياً من كل الأجهزة (Firebase + هذا الجهاز). هل أنت متأكد؟"))return;
+  if(!confirm("تأكيد أخير — لا يمكن التراجع عن هذا الإجراء. هل تريد المتابعة؟"))return;
+
+  const btn=document.activeElement;
+  const oldTxt=btn?btn.innerHTML:"";
+  if(btn){btn.disabled=true;btn.innerHTML='<i class="ti ti-loader-2 spin"></i> جاري الحذف...';}
+
+  if(fbDB){
+    const cols=["sales","expenses","feedReceipts","salaryPayments","daily","operations","gmEntries"];
+    for(const col of cols){
+      try{
+        let snap=await fbDB.collection(col).limit(400).get();
+        while(!snap.empty){
+          const batch=fbDB.batch();
+          snap.docs.forEach(d=>batch.delete(d.ref));
+          await batch.commit();
+          snap=await fbDB.collection(col).limit(400).get();
+        }
+      }catch(e){console.error("clear",col,e.message);}
+    }
+  }
+
+  localStorage.removeItem("fv6");
+  const keepSettings=DB.settings;
+  DB={daily:{},operations:{},expenses:[],sales:[],feedReceipts:[],attendance:{},salaryPayments:[],empNotes:{},diesel:{balance:0,log:[]},gmEntries:[],settings:keepSettings||defaultSettings()};
+  EMPS=DB.settings.employees;
+  saveDB();refreshAll();
+  if(btn){btn.disabled=false;btn.innerHTML=oldTxt;}
+  showToast("✓ تم مسح جميع البيانات من كل الأجهزة");
+}
+
+// ══ Init ══════════════════════════════════════════════════
+loadDB();
+if(typeof firebase!=="undefined"){initFirebase();}
+else{window.addEventListener("load",()=>{if(typeof firebase!=="undefined")initFirebase();});}
+refreshAll();
+if(G("exp-from"))G("exp-from").addEventListener("change",updateExpLabel);
+if(G("exp-to"))G("exp-to").addEventListener("change",updateExpLabel);
+if(G("exp-from"))G("exp-from").value=CM()+"-01";
+if(G("exp-to"))G("exp-to").value=KEY();
+setTimeout(updateExpLabel,500);
+
+
+function renderGmOverview(){
+  const ff=fishFarmMonthTotals();
+  const units=DB.settings.businessUnits||[];
+  const all=[{name:"أسماك الخير — الإنتاج السمكي",status:"نشط",revenue:ff.revenue,expenses:ff.expenses,real:true},
+    ...units.map(u=>({...u,real:false}))];
+  const totalRev=all.reduce((s,u)=>s+(+u.revenue||0),0);
+  const totalExp=all.reduce((s,u)=>s+(+u.expenses||0),0);
+  const totalNet=totalRev-totalExp;
+  const activeCount=all.filter(u=>u.status==="نشط").length;
+
+  if(!G("gmp-overview"))return;
+  G("gmp-overview").innerHTML=`
+    <div class="card" style="border:1.5px solid var(--navy)">
+      <div class="card-title"><i class="ti ti-building-skyscraper" style="font-size:15px"></i> نظرة عامة على الشركة — ${MO[new Date().getMonth()]}</div>
+      <div class="fin-summary">
+        <div class="fin-box" style="background:#F0FDF4"><div class="fin-v" style="color:var(--green)">${NM(totalRev)}</div><div class="fin-l" style="color:#6B7280">إجمالي الإيرادات</div></div>
+        <div class="fin-box" style="background:#FFF5F5"><div class="fin-v" style="color:var(--red)">${NM(totalExp)}</div><div class="fin-l" style="color:#6B7280">إجمالي المصروفات</div></div>
+        <div class="fin-box" style="background:${totalNet>=0?'var(--sky)':'#FFF5F5'}"><div class="fin-v" style="color:${totalNet>=0?'var(--navy)':'var(--red)'}">${NM(Math.abs(totalNet))}</div><div class="fin-l" style="color:#6B7280">${totalNet>=0?"الصافي":"العجز"}</div></div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:6px">${activeCount} من ${all.length} وحدات نشطة</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-pie" style="font-size:15px"></i> مساهمة كل وحدة في الصافي</div>
+      <div style="position:relative;height:200px"><canvas id="chart-units"></canvas></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-building-store" style="font-size:15px"></i> وحدات الأعمال</div>
+      ${all.map(u=>{
+        const net=(+u.revenue||0)-(+u.expenses||0);
+        return `<div class="trow"><div class="ticon" style="background:var(--sky);color:var(--navy)"><i class="ti ti-${u.real?"fish":"building-warehouse"}"></i></div>
+          <div style="flex:1"><div class="t-name">${u.name}</div><div class="t-sub">${u.status} ${u.real?"· بيانات تلقائية":"· إدخال يدوي"}</div></div>
+          <span class="t-amt" style="color:${net>=0?'var(--green)':'var(--red)'}">${net>=0?"+":""}${NM(net)}</span></div>`;
+      }).join("")}
+      <div style="text-align:center;margin-top:8px"><button class="btn btn-ghost" onclick="switchGmTab('finance')" style="font-size:12px;padding:9px"><i class="ti ti-edit" style="font-size:13px"></i> تعديل بيانات الوحدات في المالية الجماعية</button></div>
+    </div>
+  `;
+
+  drawChart("chart-units",{
+    type:"doughnut",
+    data:{labels:all.map(u=>u.name),datasets:[{data:all.map(u=>Math.max(0,(+u.revenue||0)-(+u.expenses||0))),backgroundColor:CHART_COLORS}]},
+    options:{plugins:{legend:{position:"bottom",labels:{font:{size:10,family:"inherit"},boxWidth:10,padding:10}}},maintainAspectRatio:false}
+  });
+}
+
+function renderGmGroupFinance(){
+  const ff=fishFarmMonthTotals();
+  const units=DB.settings.businessUnits||[];
+  const totalRev=ff.revenue+units.reduce((s,u)=>s+(+u.revenue||0),0);
+  const totalExp=ff.expenses+units.reduce((s,u)=>s+(+u.expenses||0),0);
+  const totalNet=totalRev-totalExp;
+
+  // expense distribution: fish-farm categories + each unit as one slice
+  const catTotals={};
+  DB.expenses.filter(e=>e.date&&e.date.startsWith(CM())&&e.type!=="income").forEach(e=>{
+    catTotals[e.cat]=(catTotals[e.cat]||0)+(parseFloat(e.amount)||0);
+  });
+  const distLabels=[...Object.keys(catTotals)];
+  const distValues=[...Object.values(catTotals)];
+  units.forEach(u=>{if((+u.expenses||0)>0){distLabels.push(u.name);distValues.push(+u.expenses);}});
+
+  if(!G("gmp-finance"))return;
+  G("gmp-finance").innerHTML=`
+    <div class="card" style="border:1.5px solid var(--navy)">
+      <div class="card-title"><i class="ti ti-report-money" style="font-size:15px"></i> المالية الجماعية — ${MO[new Date().getMonth()]}</div>
+      <div class="fin-summary">
+        <div class="fin-box" style="background:#F0FDF4"><div class="fin-v" style="color:var(--green)">${NM(totalRev)}</div><div class="fin-l" style="color:#6B7280">الإيرادات</div></div>
+        <div class="fin-box" style="background:#FFF5F5"><div class="fin-v" style="color:var(--red)">${NM(totalExp)}</div><div class="fin-l" style="color:#6B7280">المصروفات</div></div>
+        <div class="fin-box" style="background:${totalNet>=0?'var(--sky)':'#FFF5F5'}"><div class="fin-v" style="color:${totalNet>=0?'var(--navy)':'var(--red)'}">${NM(Math.abs(totalNet))}</div><div class="fin-l" style="color:#6B7280">${totalNet>=0?"الصافي":"العجز"}</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-fish" style="font-size:15px"></i> أسماك الخير — بيانات تلقائية</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">محسوبة تلقائياً من مبيعات ومصروفات نسخة مدير المزرعة لهذا الشهر</div>
+      <div class="fr">
+        <div class="fg"><label class="fl">الإيرادات</label><input class="fi" value="${NM(ff.revenue)} ر.س" readonly style="background:#F8FAFC;color:var(--green);font-weight:700"></div>
+        <div class="fg" style="margin-bottom:0"><label class="fl">المصروفات</label><input class="fi" value="${NM(ff.expenses)} ر.س" readonly style="background:#F8FAFC;color:var(--red);font-weight:700"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div class="card-title" style="margin:0"><i class="ti ti-building-warehouse" style="font-size:15px"></i> وحدات أعمال أخرى</div>
+        <button onclick="addBizUnit()" style="font-size:11px;background:var(--sky);color:var(--navy);border:none;padding:6px 11px;border-radius:8px;font-weight:700;cursor:pointer;font-family:inherit"><i class="ti ti-plus" style="font-size:12px"></i> إضافة وحدة</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">أدخل أرقام ${MO[new Date().getMonth()]} يدوياً — تُحفظ وتُزامن تلقائياً، ويمكنك إضافة أي عدد من الوحدات</div>
+      ${units.length?units.map((u,i)=>`
+        <div style="border:1px solid var(--border);border-radius:11px;padding:11px;margin-bottom:10px">
+          <div class="fr">
+            <div class="fg"><label class="fl">اسم الوحدة</label><input class="fi" value="${u.name}" onchange="updateBizUnit(${i},'name',this.value)"></div>
+            <div class="fg" style="margin-bottom:0"><label class="fl">الحالة</label>
+              <select class="fi" onchange="updateBizUnit(${i},'status',this.value)">
+                <option value="نشط" ${u.status==="نشط"?"selected":""}>نشط</option>
+                <option value="قيد التوسع" ${u.status==="قيد التوسع"?"selected":""}>قيد التوسع</option>
+                <option value="قيد التطوير" ${u.status==="قيد التطوير"?"selected":""}>قيد التطوير</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr" style="margin-bottom:0">
+            <div class="fg" style="margin-bottom:0"><label class="fl">الإيرادات (ر.س)</label><input class="fi" type="number" value="${u.revenue||0}" oninput="updateBizUnit(${i},'revenue',this.value)"></div>
+            <div class="fg" style="margin-bottom:0"><label class="fl">المصروفات (ر.س)</label><input class="fi" type="number" value="${u.expenses||0}" oninput="updateBizUnit(${i},'expenses',this.value)"></div>
+          </div>
+          <div style="text-align:left;margin-top:8px"><button onclick="removeBizUnit(${i})" style="font-size:11px;background:none;border:none;color:var(--red);cursor:pointer;font-family:inherit;font-weight:600"><i class="ti ti-trash" style="font-size:13px"></i> حذف الوحدة</button></div>
+        </div>
+      `).join(""):`<div class="empty"><i class="ti ti-building-warehouse"></i>لا توجد وحدات أعمال أخرى — أضف وحدة لتظهر هنا</div>`}
+    </div>
+
+    ${distLabels.length?`<div class="card"><div class="card-title"><i class="ti ti-chart-donut-2" style="font-size:15px"></i> توزيع المصروفات — كل الوحدات</div><div style="position:relative;height:220px"><canvas id="chart-expense-dist"></canvas></div></div>`:""}
+  `;
+
+  if(distLabels.length){
+    drawChart("chart-expense-dist",{
+      type:"doughnut",
+      data:{labels:distLabels,datasets:[{data:distValues,backgroundColor:CHART_COLORS}]},
+      options:{plugins:{legend:{position:"bottom",labels:{font:{size:10,family:"inherit"},boxWidth:10,padding:8}}},maintainAspectRatio:false}
+    });
+  }
+}
+
+function updateBizUnit(i,field,val){
+  const u=DB.settings.businessUnits[i];if(!u)return;
+  u[field]=(field==="revenue"||field==="expenses")?(parseFloat(val)||0):val;
+  saveSettings();
+  if(_gmTab==="overview")renderGmOverview();
+}
+function addBizUnit(){
+  DB.settings.businessUnits.push({id:Date.now(),name:"وحدة جديدة",status:"قيد التطوير",revenue:0,expenses:0});
+  saveSettings();renderGmGroupFinance();
+}
+function removeBizUnit(i){
+  if(!confirm("حذف هذه الوحدة من المالية الجماعية؟"))return;
+  DB.settings.businessUnits.splice(i,1);
+  saveSettings();renderGmGroupFinance();
+}
+
+function renderGmMarketing(){
+  const cm=CM();
+  const monthSales=DB.sales.filter(s=>s.date&&s.date.startsWith(cm));
+  const customers={};
+  monthSales.forEach(s=>{
+    const k=s.customer||"غير محدد";
+    if(!customers[k])customers[k]={orders:0,total:0,last:s.date,type:s.custType||"—"};
+    customers[k].orders++;customers[k].total+=(parseFloat(s.net)||0);
+    if(s.date>customers[k].last)customers[k].last=s.date;
+  });
+  const topCustomers=Object.entries(customers).sort((a,b)=>b[1].total-a[1].total).slice(0,8);
+
+  const typeDist={};
+  monthSales.forEach(s=>{const t=s.custType||"غير محدد";typeDist[t]=(typeDist[t]||0)+(parseFloat(s.net)||0);});
+
+  const payDist={};
+  monthSales.forEach(s=>{const t=s.payType||"غير محدد";payDist[t]=(payDist[t]||0)+(parseFloat(s.net)||0);});
+
+  const totalSales=monthSales.reduce((s,e)=>s+(parseFloat(e.net)||0),0);
+  const avgOrder=monthSales.length?totalSales/monthSales.length:0;
+
+  if(!G("gmp-marketing"))return;
+  G("gmp-marketing").innerHTML=`
+    <div class="kpi-grid" style="margin:0 0 12px">
+      <div class="card" style="text-align:center;padding:11px"><div style="font-size:21px;font-weight:800;color:var(--navy)">${Object.keys(customers).length}</div><div style="font-size:10px;color:var(--muted);margin-top:3px">عملاء هذا الشهر</div></div>
+      <div class="card" style="text-align:center;padding:11px"><div style="font-size:21px;font-weight:800;color:var(--navy)">${monthSales.length}</div><div style="font-size:10px;color:var(--muted);margin-top:3px">عدد الطلبات</div></div>
+      <div class="card" style="text-align:center;padding:11px"><div style="font-size:21px;font-weight:800;color:var(--navy)">${NM(avgOrder)}</div><div style="font-size:10px;color:var(--muted);margin-top:3px">متوسط الطلب ر.س</div></div>
+    </div>
+
+    <div class="fr" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div class="card">
+        <div class="card-title" style="font-size:12px"><i class="ti ti-users" style="font-size:14px"></i> نوع العملاء</div>
+        ${typeDist && Object.keys(typeDist).length?`<div style="position:relative;height:160px"><canvas id="chart-custtype"></canvas></div>`:`<div class="empty" style="padding:20px 0"><i class="ti ti-chart-pie"></i>لا توجد مبيعات</div>`}
+      </div>
+      <div class="card">
+        <div class="card-title" style="font-size:12px"><i class="ti ti-credit-card" style="font-size:14px"></i> طريقة الدفع</div>
+        ${payDist && Object.keys(payDist).length?`<div style="position:relative;height:160px"><canvas id="chart-paytype"></canvas></div>`:`<div class="empty" style="padding:20px 0"><i class="ti ti-chart-pie"></i>لا توجد مبيعات</div>`}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-star" style="font-size:15px"></i> أهم العملاء — ${MO[new Date().getMonth()]}</div>
+      ${topCustomers.length?topCustomers.map(([name,c])=>`
+        <div class="trow"><div class="ticon" style="background:var(--sky);color:var(--navy)"><i class="ti ti-user"></i></div>
+          <div style="flex:1"><div class="t-name">${name}</div><div class="t-sub">${c.orders} طلب · ${c.type} · آخر تعامل ${c.last}</div></div>
+          <span class="t-amt" style="color:var(--green)">${NM(c.total)} ر.س</span></div>
+      `).join(""):`<div class="empty"><i class="ti ti-users"></i>لا توجد مبيعات هذا الشهر</div>`}
+    </div>
+
+    <div class="card" style="border:1px dashed var(--border);background:transparent">
+      <div style="font-size:12px;color:var(--muted);text-align:center;line-height:1.7"><i class="ti ti-rocket" style="font-size:15px;color:var(--gold)"></i> قنوات التوصيل (هنقرستيشن، كيتا، نون) وسجل الشكاوى — جزء من خارطة طريق وحدة التسويق الكاملة، راجع "النظام والمنصة"</div>
+    </div>
+  `;
+
+  if(Object.keys(typeDist).length){
+    drawChart("chart-custtype",{type:"doughnut",data:{labels:Object.keys(typeDist),datasets:[{data:Object.values(typeDist),backgroundColor:CHART_COLORS}]},options:{plugins:{legend:{position:"bottom",labels:{font:{size:10,family:"inherit"},boxWidth:10,padding:6}}},maintainAspectRatio:false}});
+  }
+  if(Object.keys(payDist).length){
+    drawChart("chart-paytype",{type:"doughnut",data:{labels:Object.keys(payDist),datasets:[{data:Object.values(payDist),backgroundColor:CHART_COLORS}]},options:{plugins:{legend:{position:"bottom",labels:{font:{size:10,family:"inherit"},boxWidth:10,padding:6}}},maintainAspectRatio:false}});
+  }
+}
+
+const APP_VERSION="v9.0";
+const CHANGELOG=[
+  {version:"v9.0",date:"13 يونيو 2026",items:[
+    "إصلاح خطأ عرض المصاريف كإيرادات في الشاشة الرئيسية",
+    "كالندر للوصول السريع للأرشيف من الشاشة الرئيسية",
+    "إمكانية اختيار الصور من الاستوديو بدل الكاميرا فقط",
+    "نقل خيار مسح جميع البيانات لصلاحيات المدير العام",
+    "تجديد الألوان والتصميم العام",
+    "إطلاق «لوحة الشركة» — نظرة عامة، مالية جماعية، تسويق، ونظام/خارطة طريق"
+  ]},
+  {version:"v8.0",date:"13 يونيو 2026",items:[
+    "إضافة الضريبة الاختيارية (15٪) في عمليات البيع",
+    "ضغط الصور تلقائياً لضمان تزامنها مع التقارير",
+    "كالندر لعرض وتعديل بيانات الأيام السابقة (اليومي)",
+    "سجل أحداث تفصيلي ولحظة آخر تحديث للمدير العام",
+    "نقل لوحة الإدارة والتخصيص لصلاحيات المدير العام"
+  ]},
+  {version:"v7.0",date:"أوائل يونيو 2026",items:[
+    "تسجيل دخول حسب الصلاحيات (مدير المزرعة / المدير العام)",
+    "مزامنة لحظية للبيانات عبر Firebase",
+    "إطلاق لوحة المدير العام الأولى"
+  ]}
+];
+
+function renderGmSystem(){
+  const roadmap=DB.settings.roadmap||[];
+  if(!G("gmp-system"))return;
+  G("gmp-system").innerHTML=`
+    <div class="card" style="border:1.5px solid var(--gold);background:var(--gold-dim)">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:11px;color:#92400E">النسخة الحالية</div>
+          <div style="font-size:22px;font-weight:800;color:#92400E;font-family:monospace">${APP_VERSION}</div>
+        </div>
+        <div style="text-align:left">
+          <div style="font-size:11px;color:#92400E">آخر تحديث</div>
+          <div style="font-size:13px;font-weight:700;color:#92400E">${CHANGELOG[0].date}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-git-branch" style="font-size:15px"></i> سجل التحديثات</div>
+      ${CHANGELOG.map((v,vi)=>`
+        <div style="margin-bottom:${vi===CHANGELOG.length-1?0:14}px">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <span style="font-family:monospace;font-size:12px;font-weight:800;color:var(--navy);background:var(--sky);padding:2px 8px;border-radius:6px">${v.version}</span>
+            <span style="font-size:11px;color:var(--muted)">${v.date}</span>
+          </div>
+          ${v.items.map(it=>`<div style="display:flex;gap:7px;align-items:flex-start;padding:3px 0 3px 4px"><i class="ti ti-check" style="color:var(--green);font-size:13px;margin-top:2px;flex-shrink:0"></i><span style="font-size:12.5px;color:var(--text);line-height:1.6">${it}</span></div>`).join("")}
+        </div>
+      `).join("")}
+    </div>
+
+    <div class="card">
+      <div class="card-title"><i class="ti ti-map" style="font-size:15px"></i> خارطة الطريق — أهداف النسخة القادمة</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px">هذه القائمة قابلة للتعديل — أضف، رتّب أولويات، أو علّمها كمكتملة</div>
+      ${roadmap.length?roadmap.map((r,i)=>`
+        <div class="trow" style="align-items:flex-start;cursor:pointer" onclick="toggleRoadmapDone(${i})">
+          <div class="ticon" style="background:${r.done?'#F0FDF4':'var(--sky)'};color:${r.done?'var(--green)':'var(--navy)'}"><i class="ti ti-${r.done?"check":"circle"}"></i></div>
+          <div style="flex:1">
+            <div class="t-name" style="text-decoration:${r.done?'line-through':'none'};color:${r.done?'var(--muted)':'var(--text)'}">${r.title}</div>
+            <div class="t-sub">${r.desc}</div>
+          </div>
+          <span class="badge" style="background:${r.priority==="عالية"?'#FEE2E2':r.priority==="متوسطة"?'var(--gold-dim)':'#F1F5F9'};color:${r.priority==="عالية"?'var(--red)':r.priority==="متوسطة"?'#92400E':'var(--muted)'}">${r.priority}</span>
+          <button onclick="event.stopPropagation();removeRoadmapItem(${i})" style="background:none;border:none;color:var(--muted);cursor:pointer;padding:0 0 0 6px"><i class="ti ti-x" style="font-size:14px"></i></button>
+        </div>
+      `).join(""):`<div class="empty"><i class="ti ti-map"></i>لا توجد بنود — أضف أول هدف بالأسفل</div>`}
+
+      <div style="border-top:1px solid var(--border);margin-top:10px;padding-top:12px">
+        <div class="fg"><label class="fl">العنوان</label><input class="fi" id="rm-title" placeholder="مثال: ربط تطبيقات التوصيل"></div>
+        <div class="fg"><label class="fl">التفاصيل</label><input class="fi" id="rm-desc" placeholder="وصف مختصر (اختياري)"></div>
+        <div class="fr">
+          <div class="fg" style="margin-bottom:0"><label class="fl">الأولوية</label>
+            <select class="fi" id="rm-pri"><option>عالية</option><option selected>متوسطة</option><option>منخفضة</option></select>
+          </div>
+          <div class="fg" style="margin-bottom:0;display:flex;align-items:flex-end">
+            <button onclick="addRoadmapItem()" class="btn btn-primary" style="width:100%"><i class="ti ti-plus"></i> إضافة للخارطة</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function toggleRoadmapDone(i){DB.settings.roadmap[i].done=!DB.settings.roadmap[i].done;saveSettings();renderGmSystem();}
+function removeRoadmapItem(i){DB.settings.roadmap.splice(i,1);saveSettings();renderGmSystem();}
+function addRoadmapItem(){
+  const title=V("rm-title");if(!title.trim()){showToast("أدخل عنوان الهدف");return;}
+  DB.settings.roadmap.push({title,desc:V("rm-desc"),priority:V("rm-pri"),done:false});
+  saveSettings();
+  G("rm-title").value="";G("rm-desc").value="";
+  renderGmSystem();
+}
+
+</script>
+</body>
+</html>
